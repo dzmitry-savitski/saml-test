@@ -6,8 +6,8 @@ Set up Jotai for global state management.  - implemented
 Build a wrapper for localStorage-based persistent state.  - implemented
 
 2. SP Management (Home Page)
-Design the schema for SP config (including both SP and IDP settings).
-Implement the useSPStore hook to manage SPs in localStorage.
+Design the schema for SP config (including both SP and IDP settings). -implemented
+Implement the useSPStore hook to manage SPs in localStorage. -implemented
 Build the Home page UI:
 List SPs.
 Add/Delete SPs.
