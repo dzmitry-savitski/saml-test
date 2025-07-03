@@ -9,8 +9,8 @@ Build a wrapper for localStorage-based persistent state.  - implemented
 Design the schema for SP config (including both SP and IDP settings). -implemented
 Implement the useSPStore hook to manage SPs in localStorage. -implemented
 Build the Home page UI:
-List SPs.
-Add/Delete SPs.
+- List SPs.
+- Add/Delete SPs.
 Import (file upload) / Export (download JSON) for all SPs.
 Assign each SP a unique slug/id for routing.
 
