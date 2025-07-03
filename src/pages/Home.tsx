@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSPStore } from '../hooks/useSPStore';
 import type { ServiceProvider } from '../types/samlConfig';
 
@@ -34,9 +34,10 @@ const emptySP = (id: string): ServiceProvider => ({
 const idPattern = /^[a-zA-Z0-9-]+$/;
 
 const Home: React.FC = () => {
-  const { spList, addSP, deleteSP } = useSPStore();
+  const { spList, addSP, deleteSP, setSpList } = useSPStore();
   const [newId, setNewId] = useState('');
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = () => {
     if (!newId.trim()) {
@@ -56,9 +57,66 @@ const Home: React.FC = () => {
     setError('');
   };
 
+  const handleExport = () => {
+    const data = JSON.stringify(spList, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'saml-service-providers.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+        if (!Array.isArray(parsed)) throw new Error('Invalid format');
+        // Optionally: validate each item is a ServiceProvider
+        setSpList(parsed);
+        setError('');
+      } catch (err) {
+        setError('Failed to import: Invalid or malformed JSON.');
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be re-imported if needed
+    e.target.value = '';
+  };
+
   return (
     <div className="max-w-xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Service Providers</h1>
+      <div className="mb-4 flex gap-2 flex-wrap">
+        <button
+          className="bg-green-500 text-white px-4 py-1 rounded"
+          onClick={handleExport}
+        >
+          Export JSON
+        </button>
+        <button
+          className="bg-yellow-500 text-white px-4 py-1 rounded"
+          onClick={handleImportClick}
+        >
+          Import JSON
+        </button>
+        <input
+          type="file"
+          accept="application/json"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleImport}
+        />
+      </div>
       <div className="mb-4 flex gap-2 flex-col sm:flex-row">
         <input
           className="border px-2 py-1 rounded"
