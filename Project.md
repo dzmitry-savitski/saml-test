@@ -5,6 +5,7 @@ Here's a structured development plan for your React + TypeScript SAML testing ap
 ## App Architecture Overview
 
 * **Frontend Only**: React + TypeScript SPA.
+* **Frontend Technologies**: use tailwind CSS + DaisyUi
 * **Storage**: Browser `localStorage`. Should be don through Jotai where is possible.
 * **Routing**: `react-router-dom` for SPA-style navigation.
 * **Crypto**: Use Web Crypto API for key usage (if needed).
