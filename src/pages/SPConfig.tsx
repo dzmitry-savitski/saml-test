@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
 import type { ServiceProvider, IdentityProviderConfig } from '../types/samlConfig';
+import { generateSPCertificates } from '../utils/certificateGenerator';
 
 const SPConfig: React.FC = () => {
   const { spId } = useParams<{ spId: string }>();
@@ -31,7 +32,12 @@ const SPConfig: React.FC = () => {
 
     // Only set form data if we haven't loaded it yet
     if (!hasLoadedData.current) {
-      setFormData(sp);
+      // Set the ACS URL to the hardcoded format
+      const updatedSp = {
+        ...sp,
+        acsUrl: `${window.location.origin}/sp/${spId}/acs`
+      };
+      setFormData(updatedSp);
       hasLoadedData.current = true;
     }
     setIsLoading(false);
@@ -79,9 +85,6 @@ const SPConfig: React.FC = () => {
     if (!formData.entityId?.trim()) {
       newErrors.entityId = 'Entity ID is required';
     }
-    if (!formData.acsUrl?.trim()) {
-      newErrors.acsUrl = 'ACS URL is required';
-    }
     if (!formData.certificate?.trim()) {
       newErrors.certificate = 'Certificate is required';
     }
@@ -116,7 +119,13 @@ const SPConfig: React.FC = () => {
 
     setIsSaving(true);
     try {
-      updateSP(spId, formData);
+      // Ensure ACS URL is set correctly
+      const updatedFormData = {
+        ...formData,
+        acsUrl: `${window.location.origin}/sp/${spId}/acs`
+      };
+      
+      updateSP(spId, updatedFormData);
       // Show success message or redirect
       alert('Configuration saved successfully!');
     } catch (error) {
@@ -183,6 +192,26 @@ const SPConfig: React.FC = () => {
       alert('Error importing metadata. Please check the URL and try again.');
     } finally {
       setIsImportingMetadata(false);
+    }
+  };
+
+  const regenerateCertificates = () => {
+    if (!formData || !spId) return;
+    
+    if (confirm('This will generate new certificates and keys. This action cannot be undone. Are you sure you want to continue?')) {
+      try {
+        const certificates = generateSPCertificates(spId);
+        
+        handleInputChange('privateKey', certificates.signing.privateKey);
+        handleInputChange('certificate', certificates.signing.certificate);
+        handleInputChange('encryptionKey', certificates.encryption.privateKey);
+        handleInputChange('encryptionCertificate', certificates.encryption.certificate);
+        
+        alert('Certificates regenerated successfully!');
+      } catch (error) {
+        console.error('Error regenerating certificates:', error);
+        alert('Error regenerating certificates. Please try again.');
+      }
     }
   };
 
@@ -273,20 +302,29 @@ const SPConfig: React.FC = () => {
             {/* ACS URL */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text">ACS URL *</span>
+                <span className="label-text">ACS URL</span>
               </label>
-              <input
-                type="url"
-                className={`input input-bordered ${errors.acsUrl ? 'input-error' : ''}`}
-                value={formData.acsUrl}
-                onChange={(e) => handleInputChange('acsUrl', e.target.value)}
-                placeholder="https://sp.example.com/acs"
-              />
-              {errors.acsUrl && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.acsUrl}</span>
-                </label>
-              )}
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  className="input input-bordered bg-gray-100"
+                  value={formData.acsUrl}
+                  readOnly
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(formData.acsUrl);
+                    alert('ACS URL copied to clipboard!');
+                  }}
+                >
+                  Copy
+                </button>
+              </div>
+              <label className="label">
+                <span className="label-text-alt text-gray-500">This URL is automatically generated and cannot be changed</span>
+              </label>
             </div>
 
             {/* ACS Binding */}
@@ -327,11 +365,35 @@ const SPConfig: React.FC = () => {
             </label>
           </div>
 
+          {/* Certificate Management */}
+          <div className="mt-4">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-semibold">Certificates and Keys</h3>
+              <button
+                className="btn btn-warning btn-sm"
+                onClick={regenerateCertificates}
+              >
+                Regenerate Certificates
+              </button>
+            </div>
+            <div className="alert alert-info">
+              <div>
+                <h4 className="font-bold">Certificate Information</h4>
+                <div className="text-xs">
+                  <p>• Signing certificates are used to sign SAML requests and verify responses</p>
+                  <p>• Encryption certificates are used to encrypt SAML assertions</p>
+                  <p>• Certificates are auto-generated when creating a new SP</p>
+                  <p>• Use "Regenerate Certificates" to create new certificates if needed</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Certificates and Keys */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Certificate (PEM) *</span>
+                <span className="label-text">Signing Certificate (PEM) *</span>
               </label>
               <textarea
                 className={`textarea textarea-bordered h-32 ${errors.certificate ? 'textarea-error' : ''}`}
@@ -348,7 +410,7 @@ const SPConfig: React.FC = () => {
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Private Key (PEM) *</span>
+                <span className="label-text">Signing Private Key (PEM) *</span>
               </label>
               <textarea
                 className={`textarea textarea-bordered h-32 ${errors.privateKey ? 'textarea-error' : ''}`}

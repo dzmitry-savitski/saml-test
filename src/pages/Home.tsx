@@ -2,35 +2,41 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
 import type { ServiceProvider } from '../types/samlConfig';
+import { generateSPCertificates } from '../utils/certificateGenerator';
 
-const emptySP = (id: string): ServiceProvider => ({
-  id,
-  entityId: '',
-  acsUrl: '',
-  spAcsBinding: 'POST',
-  sloUrl: '',
-  spSloBinding: 'POST',
-  privateKey: '',
-  certificate: '',
-  encryptionKey: '',
-  encryptionCertificate: '',
-  signAuthnRequest: false,
-  allowCreate: false,
-  nameIdFormat: '',
-  idp: {
-    entityId: '',
-    ssoUrl: '',
-    singleSignOnBinding: 'POST',
-    wantAuthnRequestsSigned: false,
+const emptySP = (id: string): ServiceProvider => {
+  // Generate certificates for the new SP
+  const certificates = generateSPCertificates(id);
+  
+  return {
+    id,
+    entityId: id,
+    acsUrl: `${window.location.origin}/sp/${id}/acs`,
+    spAcsBinding: 'POST',
     sloUrl: '',
-    sloBinding: 'POST',
-    certificate: '',
-    metadataUrl: '',
-    rawMetadataXml: '',
-    displayName: '',
-    logoUrl: '',
-  },
-});
+    spSloBinding: 'POST',
+    privateKey: certificates.signing.privateKey,
+    certificate: certificates.signing.certificate,
+    encryptionKey: certificates.encryption.privateKey,
+    encryptionCertificate: certificates.encryption.certificate,
+    signAuthnRequest: false,
+    allowCreate: false,
+    nameIdFormat: 'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified',
+    idp: {
+      entityId: '',
+      ssoUrl: '',
+      singleSignOnBinding: 'POST',
+      wantAuthnRequestsSigned: false,
+      sloUrl: '',
+      sloBinding: 'POST',
+      certificate: '',
+      metadataUrl: '',
+      rawMetadataXml: '',
+      displayName: '',
+      logoUrl: '',
+    },
+  };
+};
 
 const idPattern = /^[a-zA-Z0-9-]+$/;
 
