@@ -21,6 +21,12 @@ Implement toggles for sign-authn-request, allow-create, POST/GET binding. - COMP
 Add live validation for form fields. - COMPLETED
 Save config to localStorage on save. - COMPLETED
 
+4. Create metadata Page
+Create /sp/:spId/metadata page
+This page should generate metadata for the current SP and display it (xml)
+The /sp/:spId/metadata/download binding should initiate metadata download
+The SP page should have both: view mtadata and download metadata pages
+
 4. SP-Initiated Auth Page
 Create the Initiate page at /sp/:spId/initiate.
 Load SP config and construct a SAMLRequest.

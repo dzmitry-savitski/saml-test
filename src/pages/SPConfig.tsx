@@ -206,12 +206,20 @@ const SPConfig: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Configure Service Provider</h1>
-        <button 
-          onClick={() => navigate('/')}
-          className="btn btn-outline btn-sm"
-        >
-          Back to List
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => navigate(`/sp/${spId}/initiate`)}
+            className="btn btn-outline btn-sm"
+          >
+            Back to SP
+          </button>
+          <button 
+            onClick={() => navigate('/')}
+            className="btn btn-outline btn-sm"
+          >
+            Back to List
+          </button>
+        </div>
       </div>
 
       <div className="card bg-base-100 shadow-xl">

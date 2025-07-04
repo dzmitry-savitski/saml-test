@@ -138,34 +138,13 @@ const Home: React.FC = () => {
       <ul className="space-y-2">
         {spList.length === 0 && <li className="text-gray-500">No Service Providers yet.</li>}
         {spList.map(sp => (
-          <li key={sp.id} className="flex items-center justify-between border p-2 rounded">
-            <span className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded mr-2">{sp.id}</span>
-            <div className="flex gap-2">
-              <button
-                className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
-                onClick={() => navigate(`/sp/${sp.id}/config`)}
-              >
-                Configure
-              </button>
-              <button
-                className="bg-green-500 text-white px-2 py-1 rounded text-sm"
-                onClick={() => navigate(`/sp/${sp.id}/initiate`)}
-              >
-                Initiate
-              </button>
-              <button
-                className="bg-purple-500 text-white px-2 py-1 rounded text-sm"
-                onClick={() => navigate(`/sp/${sp.id}/acs`)}
-              >
-                ACS
-              </button>
-              <button
-                className="bg-red-500 text-white px-2 py-1 rounded text-sm"
-                onClick={() => deleteSP(sp.id)}
-              >
-                Delete
-              </button>
-            </div>
+          <li key={sp.id} className="flex items-center justify-between border p-2 rounded hover:bg-gray-50">
+            <button
+              className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded hover:bg-gray-200 cursor-pointer"
+              onClick={() => navigate(`/sp/${sp.id}/initiate`)}
+            >
+              {sp.id}
+            </button>
           </li>
         ))}
       </ul>
