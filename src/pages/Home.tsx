@@ -12,7 +12,7 @@ const emptySP = (id: string): ServiceProvider => {
     id,
     entityId: id,
     acsUrl: `${window.location.origin}/acs?sp=${id}`,
-    spAcsBinding: 'POST',
+    spAcsBinding: 'POST' as const,
     sloUrl: '',
     spSloBinding: 'POST',
     privateKey: certificates.signing.privateKey,

@@ -32,10 +32,11 @@ const SPConfig: React.FC = () => {
 
     // Only set form data if we haven't loaded it yet
     if (!hasLoadedData.current) {
-      // Set the ACS URL to the new format
+      // Set the ACS URL to the new format and fix binding to POST
       const updatedSp = {
         ...sp,
-        acsUrl: `${window.location.origin}/acs?sp=${spId}`
+        acsUrl: `${window.location.origin}/acs?sp=${spId}`,
+        spAcsBinding: 'POST' as const
       };
       setFormData(updatedSp);
       hasLoadedData.current = true;
@@ -119,10 +120,11 @@ const SPConfig: React.FC = () => {
 
     setIsSaving(true);
     try {
-      // Ensure ACS URL is set correctly
+      // Ensure ACS URL is set correctly and binding is POST
       const updatedFormData = {
         ...formData,
-        acsUrl: `${window.location.origin}/acs?sp=${spId}`
+        acsUrl: `${window.location.origin}/acs?sp=${spId}`,
+        spAcsBinding: 'POST' as const
       };
       
       updateSP(spId, updatedFormData);
@@ -342,19 +344,20 @@ const SPConfig: React.FC = () => {
               </label>
             </div>
 
-            {/* ACS Binding */}
+            {/* ACS Binding - POST only */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text">ACS Binding</span>
               </label>
-              <select
-                className="select select-bordered"
-                value={formData.spAcsBinding}
-                onChange={(e) => handleInputChange('spAcsBinding', e.target.value as 'POST' | 'GET')}
-              >
-                <option value="POST">POST</option>
-                <option value="GET">GET</option>
-              </select>
+              <input
+                type="text"
+                className="input input-bordered bg-gray-100"
+                value="POST"
+                readOnly
+              />
+              <label className="label">
+                <span className="label-text-alt text-gray-500">ACS binding is fixed to POST</span>
+              </label>
             </div>
           </div>
 

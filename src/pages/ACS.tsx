@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
-import { getStoredRequestId, clearStoredRequestId, decodeSamlRequest } from '../utils/samlUtils';
+import { getStoredRequestId, clearStoredRequestId, decodeSamlResponse } from '../utils/samlUtils';
 import type { ServiceProvider } from '../types/samlConfig';
 
 interface SAMLResponse {
@@ -90,7 +90,7 @@ const ACS: React.FC = () => {
   const processSAMLResponseData = (encodedResponse: string, sp: ServiceProvider, relayState?: string) => {
     try {
       // Decode the SAML response
-      const xmlResponse = decodeSamlRequest(encodedResponse);
+      const xmlResponse = decodeSamlResponse(encodedResponse);
       
       // Parse the XML to extract information
       const parser = new DOMParser();
@@ -331,6 +331,22 @@ const ACS: React.FC = () => {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* ACS Binding - POST only */}
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">ACS Binding</span>
+            </label>
+            <input
+              type="text"
+              className="input input-bordered bg-gray-100"
+              value="POST"
+              readOnly
+            />
+            <label className="label">
+              <span className="label-text-alt text-gray-500">Only POST binding is supported</span>
+            </label>
           </div>
         </div>
       )}

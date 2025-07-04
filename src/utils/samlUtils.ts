@@ -128,7 +128,7 @@ export function encodeSamlRequest(samlRequest: string): string {
 }
 
 /**
- * Decodes SAML request from transmission format
+ * Decodes SAML request from transmission format (base64 + deflate)
  */
 export function decodeSamlRequest(encodedRequest: string): string {
   try {
@@ -140,6 +140,20 @@ export function decodeSamlRequest(encodedRequest: string): string {
   } catch (error) {
     console.error('Error decoding SAML request:', error);
     throw new Error('Invalid SAML request encoding');
+  }
+}
+
+/**
+ * Decodes SAML response from transmission format (base64 only, no compression)
+ */
+export function decodeSamlResponse(encodedResponse: string): string {
+  try {
+    // Decode from base64 only (no compression for SAML responses)
+    const xml = atob(encodedResponse);
+    return xml;
+  } catch (error) {
+    console.error('Error decoding SAML response:', error);
+    throw new Error('Invalid SAML response encoding');
   }
 }
 

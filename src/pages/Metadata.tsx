@@ -162,7 +162,7 @@ const Metadata: React.FC = () => {
                 Copy
               </button>
             </p>
-            <p><strong>ACS Binding:</strong> {sp.spAcsBinding || 'POST'}</p>
+            <p><strong>ACS Binding:</strong> POST (fixed)</p>
           </div>
         </div>
       </div>
