@@ -9,6 +9,7 @@ interface SAMLResponse {
   attributes: Record<string, string[]>;
   rawXml: string;
   requestId?: string;
+  relayState?: string;
   status: 'success' | 'error';
   errorMessage?: string;
 }
@@ -39,53 +40,54 @@ const ACS: React.FC = () => {
       return;
     }
 
-    setSp(foundSp);
+        setSp(foundSp);
     
-    // Check for SAMLResponse in sessionStorage if not present in URL params
-    const samlResponseParam = searchParams.get('SAMLResponse');
-    const samlRequestParam = searchParams.get('SAMLRequest');
-    if (!samlResponseParam && !samlRequestParam) {
-      const samlFromSession = sessionStorage.getItem('SAMLResponse');
-      // const relayFromSession = sessionStorage.getItem('RelayState');
-      if (samlFromSession) {
-        // Process and clear from sessionStorage
-        processSAMLResponseData(samlFromSession, foundSp);
-        sessionStorage.removeItem('SAMLResponse');
-        sessionStorage.removeItem('RelayState');
-        return;
-      }
+    // Check for response ID in URL parameters
+    const responseId = searchParams.get('response');
+    if (responseId) {
+      // Fetch SAML data from API using response ID
+      fetchSamlDataFromSession(responseId, foundSp);
+    } else {
+      setError('No response ID found in URL parameters');
+      setIsLoading(false);
     }
-    // Process SAML response from URL parameters
-    processSAMLResponse(foundSp);
   }, [spId, spList]);
 
-  const processSAMLResponse = (sp: ServiceProvider) => {
+  const fetchSamlDataFromSession = async (responseId: string, sp: ServiceProvider) => {
     try {
-      // Get SAML response from URL parameters
-      const samlResponseParam = searchParams.get('SAMLResponse');
-      const samlRequestParam = searchParams.get('SAMLRequest');
+      const response = await fetch('/acs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ responseId: responseId })
+      });
       
-      if (!samlResponseParam && !samlRequestParam) {
-        setError('No SAML response or request found in URL parameters');
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('SAML session not found or expired');
+        } else if (response.status === 410) {
+          setError('SAML session has expired');
+        } else {
+          setError(`Failed to fetch SAML data: ${response.statusText}`);
+        }
         setIsLoading(false);
         return;
       }
-
-      if (samlResponseParam) {
-        // Process SAML Response (successful authentication)
-        processSAMLResponseData(samlResponseParam, sp);
-      } else if (samlRequestParam) {
-        // Process SAML Request (error response)
-        processSAMLRequestData(samlRequestParam);
-      }
+      
+      const data = await response.json();
+      
+      // Process the SAML response data
+      processSAMLResponseData(data.samlResponse, sp, data.relayState || undefined);
+      
     } catch (error) {
-      console.error('Error processing SAML response:', error);
-      setError(`Failed to process SAML response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error fetching SAML data from session:', error);
+      setError(`Failed to fetch SAML data: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsLoading(false);
     }
   };
 
-  const processSAMLResponseData = (encodedResponse: string, sp: ServiceProvider) => {
+  const processSAMLResponseData = (encodedResponse: string, sp: ServiceProvider, relayState?: string) => {
     try {
       // Decode the SAML response
       const xmlResponse = decodeSamlRequest(encodedResponse);
@@ -141,6 +143,7 @@ const ACS: React.FC = () => {
         attributes,
         rawXml: xmlResponse,
         requestId: inResponseTo || undefined,
+        relayState,
         status: 'success'
       });
       
@@ -152,35 +155,7 @@ const ACS: React.FC = () => {
     }
   };
 
-  const processSAMLRequestData = (encodedRequest: string) => {
-    try {
-      // Decode the SAML request (error response)
-      const xmlRequest = decodeSamlRequest(encodedRequest);
-      
-      // Parse the XML to extract error information
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlRequest, 'text/xml');
-      
-      // Extract error status
-      const statusMessageElement = xmlDoc.querySelector('samlp\\:StatusMessage, StatusMessage');
-      
-      const errorMessage = statusMessageElement?.textContent || 'Authentication failed';
-      
-      setSamlResponse({
-        nameId: undefined,
-        attributes: {},
-        rawXml: xmlRequest,
-        status: 'error',
-        errorMessage
-      });
-      
-    } catch (error) {
-      console.error('Error processing SAML request data:', error);
-      setError(`Failed to process SAML request: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   if (isLoading) {
     return (
@@ -315,6 +290,18 @@ const ACS: React.FC = () => {
                 <h2 className="card-title">Request ID</h2>
                 <div className="bg-base-200 p-4 rounded-lg font-mono text-sm">
                   {samlResponse.requestId}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Relay State */}
+          {samlResponse.relayState && (
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h2 className="card-title">Relay State</h2>
+                <div className="bg-base-200 p-4 rounded-lg font-mono text-sm">
+                  {samlResponse.relayState}
                 </div>
               </div>
             </div>

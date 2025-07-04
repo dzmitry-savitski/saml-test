@@ -47,13 +47,11 @@ Add cert/key handling and validation. - COMPLETED
 Build SAML encoding/decoding helpers (base64, deflate, etc.). - COMPLETED
 Implement session tracking for RequestID. - COMPLETED
 
-8. Implement changes to ACS page
-Add acs.html static page with javascript that will:
-- accept POST requests with saml response
-- saml SP entity id will be passed as a get parameter, example "http://myapp.com/acs.html?sp=:sp-id"
-- JS will extract the sp id, SAML response and relay state and put it in the session storage for just 1 second.
-- JS will then redirect to /sp/:id/acs
-- acs page will always check session storage and extract saml response from it
+8. Implement changes to ACS page - COMPLETED
+Add cloudflare function that will be served at /sp/:id/acs and will accep post requests. - COMPLETED
+Function will extract the sp id, SAML response and relay state and put it in the short lived cookie - just for 1 second. - COMPLETED
+Function will then redirect to /sp/:id/acs (GET request) which will be handled by react - COMPLETED
+React acs page will always check cookie and extract saml response from it - COMPLETED
 
 8. Bonus / Later Features
 Pretty-print raw SAML XML.

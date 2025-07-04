@@ -32,10 +32,10 @@ const SPConfig: React.FC = () => {
 
     // Only set form data if we haven't loaded it yet
     if (!hasLoadedData.current) {
-      // Set the ACS URL to the hardcoded format
+      // Set the ACS URL to the new format
       const updatedSp = {
         ...sp,
-        acsUrl: `${window.location.origin}/sp/${spId}/acs`
+        acsUrl: `${window.location.origin}/acs?sp=${spId}`
       };
       setFormData(updatedSp);
       hasLoadedData.current = true;
@@ -122,7 +122,7 @@ const SPConfig: React.FC = () => {
       // Ensure ACS URL is set correctly
       const updatedFormData = {
         ...formData,
-        acsUrl: `${window.location.origin}/sp/${spId}/acs`
+        acsUrl: `${window.location.origin}/acs?sp=${spId}`
       };
       
       updateSP(spId, updatedFormData);
@@ -323,14 +323,14 @@ const SPConfig: React.FC = () => {
                 <input
                   type="url"
                   className="input input-bordered bg-gray-100"
-                  value={`${window.location.origin}/acs.html?sp=${spId}`}
+                  value={`${window.location.origin}/acs?sp=${spId}`}
                   readOnly
                 />
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"
                   onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/acs.html?sp=${spId}`);
+                    navigator.clipboard.writeText(`${window.location.origin}/acs?sp=${spId}`);
                     alert('ACS URL copied to clipboard!');
                   }}
                 >

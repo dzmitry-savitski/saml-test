@@ -11,7 +11,7 @@ const emptySP = (id: string): ServiceProvider => {
   return {
     id,
     entityId: id,
-    acsUrl: `${window.location.origin}/sp/${id}/acs`,
+    acsUrl: `${window.location.origin}/acs?sp=${id}`,
     spAcsBinding: 'POST',
     sloUrl: '',
     spSloBinding: 'POST',
