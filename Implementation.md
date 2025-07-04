@@ -27,27 +27,27 @@ This page should generate metadata for the current SP and display it (xml) - COM
 The /sp/:spId/metadata/download binding should initiate metadata download - COMPLETED
 The SP page should have both: view metadata and download metadata pages - COMPLETED
 
-4. SP-Initiated Auth Page
-Create the Initiate page at /sp/:spId/initiate.
-Load SP config and construct a SAMLRequest.
-Encode the request to base64.
-Redirect to the IDP SSO URL (GET or POST binding).
-Save the request ID in session/localStorage for ACS validation.
+5. SP-Initiated Auth Page - COMPLETED
+Create the Initiate page at /sp/:spId/initiate. - COMPLETED
+Load SP config and construct a SAMLRequest. - COMPLETED
+Encode the request to base64. - COMPLETED
+Redirect to the IDP SSO URL (GET or POST binding). - COMPLETED
+Save the request ID in session storage/cookies (whaever is better, per SP) for ACS validation. - COMPLETED
 
-5. ACS (Assertion Consumer Service) Page
-Create the ACS page at /sp/:spId/acs.
-Accept and parse SAML responses (from POST or GET).
-Verify the response matches the request (if SP-initiated).
-Display NameID, attributes, and raw SAML XML.
-Handle and display parsing errors gracefully.
+6. ACS (Assertion Consumer Service) Page - COMPLETED
+Create the ACS page at /sp/:spId/acs. - COMPLETED
+Accept and parse SAML responses (from POST or GET). - COMPLETED
+Verify the response matches the request (if SP-initiated). - COMPLETED
+Display NameID, attributes, and raw SAML XML. - COMPLETED
+Handle and display parsing errors gracefully. - COMPLETED
 
-6. Helper Utilities and Components
-Implement XML parsing (DOMParser or xml2js).
-Add cert/key handling and validation.
-Build SAML encoding/decoding helpers (base64, deflate, etc.).
-Implement session tracking for RequestID.
+7. Helper Utilities and Components - COMPLETED
+Implement XML parsing (DOMParser or xml2js). - COMPLETED
+Add cert/key handling and validation. - COMPLETED
+Build SAML encoding/decoding helpers (base64, deflate, etc.). - COMPLETED
+Implement session tracking for RequestID. - COMPLETED
 
-7. Bonus / Later Features
+8. Bonus / Later Features
 Pretty-print raw SAML XML.
 Export individual SP config.
 Load prefilled test data.

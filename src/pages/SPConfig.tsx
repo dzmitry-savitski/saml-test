@@ -261,13 +261,28 @@ const SPConfig: React.FC = () => {
               <label className="label">
                 <span className="label-text">Entity ID *</span>
               </label>
-              <input
-                type="text"
-                className={`input input-bordered ${errors.entityId ? 'input-error' : ''}`}
-                value={formData.entityId}
-                onChange={(e) => handleInputChange('entityId', e.target.value)}
-                placeholder="https://sp.example.com"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className={`input input-bordered flex-1 ${errors.entityId ? 'input-error' : ''}`}
+                  value={formData.entityId}
+                  onChange={(e) => handleInputChange('entityId', e.target.value)}
+                  placeholder="https://sp.example.com"
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => {
+                    if (formData.entityId) {
+                      navigator.clipboard.writeText(formData.entityId);
+                      alert('Entity ID copied to clipboard!');
+                    }
+                  }}
+                  disabled={!formData.entityId}
+                >
+                  Copy
+                </button>
+              </div>
               {errors.entityId && (
                 <label className="label">
                   <span className="label-text-alt text-error">{errors.entityId}</span>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
+import { initiateSamlAuth, createAuthnRequest, signAuthnRequest, encodeSamlRequest, base64EncodeSamlRequest } from '../utils/samlUtils';
 import type { ServiceProvider } from '../types/samlConfig';
 
 const Initiate: React.FC = () => {
@@ -12,6 +13,8 @@ const Initiate: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [forceAuthn, setForceAuthn] = useState(false);
   const [isInitiating, setIsInitiating] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [samlRequestPreview, setSamlRequestPreview] = useState<string>('');
 
   // Load SP data on mount
   useEffect(() => {
@@ -39,16 +42,48 @@ const Initiate: React.FC = () => {
     }
   };
 
+  const handlePreviewRequest = () => {
+    if (!sp) return;
+    
+    try {
+      // Generate the SAML request
+      let samlRequest = createAuthnRequest(sp, forceAuthn);
+      
+      // Sign the request if required
+      if (sp.signAuthnRequest && sp.privateKey) {
+        samlRequest = signAuthnRequest(samlRequest, sp.privateKey);
+      }
+      
+      // Encode the request based on binding
+      let encodedRequest: string;
+      if (sp.idp.singleSignOnBinding === 'GET') {
+        encodedRequest = encodeSamlRequest(samlRequest);
+      } else {
+        encodedRequest = base64EncodeSamlRequest(samlRequest);
+      }
+      
+      setSamlRequestPreview(encodedRequest);
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Failed to generate SAML request preview:', error);
+      alert(`Failed to generate SAML request preview: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   const handleInitiateAuth = () => {
     if (!sp) return;
     
     setIsInitiating(true);
     
-    // TODO: Implement actual SAML request generation and redirect
-    // For now, just show a placeholder
-    alert('SAML authentication initiation would happen here. This is a placeholder for the actual SAML request generation and redirect to the IDP.');
-    
-    setIsInitiating(false);
+    try {
+      // Initiate SAML authentication
+      initiateSamlAuth(sp, forceAuthn);
+      // Note: initiateSamlAuth will handle the redirect, so we don't need to do anything else here
+    } catch (error) {
+      console.error('Failed to initiate SAML authentication:', error);
+      alert(`Failed to initiate SAML authentication: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsInitiating(false);
+    }
   };
 
   if (isLoading) {
@@ -132,20 +167,42 @@ const Initiate: React.FC = () => {
               <div>
                 <h3 className="font-bold">Ready to authenticate</h3>
                 <div className="text-xs">
-                  <p><strong>Entity ID:</strong> {sp.entityId || 'Not configured'}</p>
+                  <p>
+                    <strong>Entity ID:</strong> {sp.entityId || 'Not configured'}
+                    {sp.entityId && (
+                      <button
+                        className="btn btn-ghost btn-xs ml-2"
+                        onClick={() => {
+                          navigator.clipboard.writeText(sp.entityId);
+                          alert('Entity ID copied to clipboard!');
+                        }}
+                      >
+                        Copy
+                      </button>
+                    )}
+                  </p>
                   <p><strong>IDP:</strong> {sp.idp.entityId || 'Not configured'}</p>
                   <p><strong>SSO URL:</strong> {sp.idp.ssoUrl || 'Not configured'}</p>
                 </div>
               </div>
             </div>
 
-            <button
-              className={`btn btn-primary w-full ${isInitiating ? 'loading' : ''}`}
-              onClick={handleInitiateAuth}
-              disabled={isInitiating || !sp.entityId || !sp.idp.entityId || !sp.idp.ssoUrl}
-            >
-              {isInitiating ? 'Initiating...' : 'Start Authentication'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                className="btn btn-outline flex-1"
+                onClick={handlePreviewRequest}
+                disabled={!sp.entityId || !sp.idp.entityId || !sp.idp.ssoUrl}
+              >
+                Preview Request
+              </button>
+              <button
+                className={`btn btn-primary flex-1 ${isInitiating ? 'loading' : ''}`}
+                onClick={handleInitiateAuth}
+                disabled={isInitiating || !sp.entityId || !sp.idp.entityId || !sp.idp.ssoUrl}
+              >
+                {isInitiating ? 'Initiating...' : 'Start Authentication'}
+              </button>
+            </div>
 
             {(!sp.entityId || !sp.idp.entityId || !sp.idp.ssoUrl) && (
               <div className="alert alert-warning">
@@ -181,6 +238,57 @@ const Initiate: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* SAML Request Preview Modal */}
+      {showPreview && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-4xl">
+            <h3 className="font-bold text-lg mb-4">SAML Request Preview</h3>
+            
+            <div className="space-y-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Encoded SAML Request (Base64 + Deflate)</span>
+                </label>
+                <textarea
+                  className="textarea textarea-bordered font-mono text-xs"
+                  rows={8}
+                  value={samlRequestPreview}
+                  readOnly
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(samlRequestPreview);
+                    alert('SAML Request copied to clipboard!');
+                  }}
+                >
+                  Copy to Clipboard
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => {
+                    setShowPreview(false);
+                    handleInitiateAuth();
+                  }}
+                >
+                  Send Request
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setShowPreview(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setShowPreview(false)}></div>
+        </div>
+      )}
     </div>
   );
 };
