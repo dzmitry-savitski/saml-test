@@ -13,13 +13,13 @@ Build the Home page UI:  -implemented
 - Add/Delete SPs. -implemented
 Import (file upload) / Export (download JSON) for all SPs. -implemented
 
-3. SP Configuration Page
-Create the SPConfig page at route /sp/:spId/config.
-Build a form to edit SP fields (Entity ID, nameid format, keys, certs, etc.).
-Add support for loading IDP metadata from a URL or manual entry.
-Implement toggles for sign-authn-request, allow-create, POST/GET binding.
-Add live validation for form fields.
-Save config to localStorage on save.
+3. SP Configuration Page - COMPLETED
+Create the SPConfig page at route /sp/:spId/config. - COMPLETED
+Build a form to edit SP fields (Entity ID, nameid format, keys, certs, etc.). - COMPLETED
+Add support for loading IDP metadata from a URL or manual entry. - COMPLETED
+Implement toggles for sign-authn-request, allow-create, POST/GET binding. - COMPLETED
+Add live validation for form fields. - COMPLETED
+Save config to localStorage on save. - COMPLETED
 
 4. SP-Initiated Auth Page
 Create the Initiate page at /sp/:spId/initiate.

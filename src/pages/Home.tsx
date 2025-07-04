@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
 import type { ServiceProvider } from '../types/samlConfig';
 
@@ -34,6 +35,7 @@ const emptySP = (id: string): ServiceProvider => ({
 const idPattern = /^[a-zA-Z0-9-]+$/;
 
 const Home: React.FC = () => {
+  const navigate = useNavigate();
   const { spList, addSP, deleteSP, setSpList } = useSPStore();
   const [newId, setNewId] = useState('');
   const [error, setError] = useState('');
@@ -138,12 +140,32 @@ const Home: React.FC = () => {
         {spList.map(sp => (
           <li key={sp.id} className="flex items-center justify-between border p-2 rounded">
             <span className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded mr-2">{sp.id}</span>
-            <button
-              className="bg-red-500 text-white px-2 py-1 rounded"
-              onClick={() => deleteSP(sp.id)}
-            >
-              Delete
-            </button>
+            <div className="flex gap-2">
+              <button
+                className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
+                onClick={() => navigate(`/sp/${sp.id}/config`)}
+              >
+                Configure
+              </button>
+              <button
+                className="bg-green-500 text-white px-2 py-1 rounded text-sm"
+                onClick={() => navigate(`/sp/${sp.id}/initiate`)}
+              >
+                Initiate
+              </button>
+              <button
+                className="bg-purple-500 text-white px-2 py-1 rounded text-sm"
+                onClick={() => navigate(`/sp/${sp.id}/acs`)}
+              >
+                ACS
+              </button>
+              <button
+                className="bg-red-500 text-white px-2 py-1 rounded text-sm"
+                onClick={() => deleteSP(sp.id)}
+              >
+                Delete
+              </button>
+            </div>
           </li>
         ))}
       </ul>
