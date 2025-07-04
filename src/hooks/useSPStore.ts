@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { spListAtom } from '../state/spAtoms';
 import type { ServiceProvider } from '../types/samlConfig';
 
@@ -7,9 +7,12 @@ const LOCAL_STORAGE_KEY = 'saml-sp-list';
 
 export function useSPStore() {
   const [spList, setSpList] = useAtom(spListAtom);
+  const hasLoadedStorage = useRef(false);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount (only once)
   useEffect(() => {
+    if (hasLoadedStorage.current) return;
+    
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (stored) {
       try {
@@ -20,11 +23,15 @@ export function useSPStore() {
         setSpList([]);
       }
     }
+    hasLoadedStorage.current = true;
   }, [setSpList]);
 
   // Persist to localStorage on change
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(spList));
+    // Only persist if we've already loaded (to avoid overwriting with empty array)
+    if (hasLoadedStorage.current) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(spList));
+    }
   }, [spList]);
 
   // CRUD operations
