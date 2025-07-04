@@ -50,7 +50,6 @@ const ACS: React.FC = () => {
       // Get SAML response from URL parameters
       const samlResponseParam = searchParams.get('SAMLResponse');
       const samlRequestParam = searchParams.get('SAMLRequest');
-      const relayState = searchParams.get('RelayState');
       
       if (!samlResponseParam && !samlRequestParam) {
         setError('No SAML response or request found in URL parameters');
@@ -63,7 +62,7 @@ const ACS: React.FC = () => {
         processSAMLResponseData(samlResponseParam, sp);
       } else if (samlRequestParam) {
         // Process SAML Request (error response)
-        processSAMLRequestData(samlRequestParam, sp);
+        processSAMLRequestData(samlRequestParam);
       }
     } catch (error) {
       console.error('Error processing SAML response:', error);
@@ -139,7 +138,7 @@ const ACS: React.FC = () => {
     }
   };
 
-  const processSAMLRequestData = (encodedRequest: string, sp: ServiceProvider) => {
+  const processSAMLRequestData = (encodedRequest: string) => {
     try {
       // Decode the SAML request (error response)
       const xmlRequest = decodeSamlRequest(encodedRequest);
@@ -149,7 +148,6 @@ const ACS: React.FC = () => {
       const xmlDoc = parser.parseFromString(xmlRequest, 'text/xml');
       
       // Extract error status
-      const statusCodeElement = xmlDoc.querySelector('samlp\\:StatusCode, StatusCode');
       const statusMessageElement = xmlDoc.querySelector('samlp\\:StatusMessage, StatusMessage');
       
       const errorMessage = statusMessageElement?.textContent || 'Authentication failed';

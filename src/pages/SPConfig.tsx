@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
-import type { ServiceProvider, IdentityProviderConfig } from '../types/samlConfig';
+import type { ServiceProvider } from '../types/samlConfig';
 import { generateSPCertificates } from '../utils/certificateGenerator';
 
 const SPConfig: React.FC = () => {

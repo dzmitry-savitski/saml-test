@@ -124,7 +124,7 @@ export function encodeSamlRequest(samlRequest: string): string {
   // First compress the XML using deflate
   const compressed = pako.deflate(samlRequest, { level: 9 });
   // Then encode to base64
-  return btoa(String.fromCharCode.apply(null, compressed));
+  return btoa(String.fromCharCode(...compressed));
 }
 
 /**

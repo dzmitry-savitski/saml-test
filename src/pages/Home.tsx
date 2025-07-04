@@ -42,7 +42,7 @@ const idPattern = /^[a-zA-Z0-9-]+$/;
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { spList, addSP, deleteSP, setSpList } = useSPStore();
+  const { spList, addSP, setSpList } = useSPStore();
   const [newId, setNewId] = useState('');
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
