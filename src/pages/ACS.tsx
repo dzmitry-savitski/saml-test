@@ -41,6 +41,20 @@ const ACS: React.FC = () => {
 
     setSp(foundSp);
     
+    // Check for SAMLResponse in sessionStorage if not present in URL params
+    const samlResponseParam = searchParams.get('SAMLResponse');
+    const samlRequestParam = searchParams.get('SAMLRequest');
+    if (!samlResponseParam && !samlRequestParam) {
+      const samlFromSession = sessionStorage.getItem('SAMLResponse');
+      // const relayFromSession = sessionStorage.getItem('RelayState');
+      if (samlFromSession) {
+        // Process and clear from sessionStorage
+        processSAMLResponseData(samlFromSession, foundSp);
+        sessionStorage.removeItem('SAMLResponse');
+        sessionStorage.removeItem('RelayState');
+        return;
+      }
+    }
     // Process SAML response from URL parameters
     processSAMLResponse(foundSp);
   }, [spId, spList]);

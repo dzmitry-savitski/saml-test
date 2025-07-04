@@ -47,6 +47,14 @@ Add cert/key handling and validation. - COMPLETED
 Build SAML encoding/decoding helpers (base64, deflate, etc.). - COMPLETED
 Implement session tracking for RequestID. - COMPLETED
 
+8. Implement changes to ACS page
+Add acs.html static page with javascript that will:
+- accept POST requests with saml response
+- saml SP entity id will be passed as a get parameter, example "http://myapp.com/acs.html?sp=:sp-id"
+- JS will extract the sp id, SAML response and relay state and put it in the session storage for just 1 second.
+- JS will then redirect to /sp/:id/acs
+- acs page will always check session storage and extract saml response from it
+
 8. Bonus / Later Features
 Pretty-print raw SAML XML.
 Export individual SP config.

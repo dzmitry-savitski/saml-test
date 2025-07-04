@@ -323,14 +323,14 @@ const SPConfig: React.FC = () => {
                 <input
                   type="url"
                   className="input input-bordered bg-gray-100"
-                  value={formData.acsUrl}
+                  value={`${window.location.origin}/acs.html?sp=${spId}`}
                   readOnly
                 />
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"
                   onClick={() => {
-                    navigator.clipboard.writeText(formData.acsUrl);
+                    navigator.clipboard.writeText(`${window.location.origin}/acs.html?sp=${spId}`);
                     alert('ACS URL copied to clipboard!');
                   }}
                 >
@@ -338,7 +338,7 @@ const SPConfig: React.FC = () => {
                 </button>
               </div>
               <label className="label">
-                <span className="label-text-alt text-gray-500">This URL is automatically generated and cannot be changed</span>
+                <span className="label-text-alt text-gray-500">This is the ACS URL to use in your IDP configuration</span>
               </label>
             </div>
 

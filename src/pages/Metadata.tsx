@@ -150,7 +150,18 @@ const Metadata: React.FC = () => {
           <h2 className="card-title">Service Provider: {sp.id}</h2>
           <div className="text-sm text-gray-600">
             <p><strong>Entity ID:</strong> {sp.entityId || 'Not configured'}</p>
-            <p><strong>ACS URL:</strong> {sp.acsUrl || 'Not configured'}</p>
+            <p>
+              <strong>ACS URL:</strong> {`${window.location.origin}/acs.html?sp=${spId}`}
+              <button
+                className="btn btn-ghost btn-xs ml-2"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/acs.html?sp=${spId}`);
+                  alert('ACS URL copied to clipboard!');
+                }}
+              >
+                Copy
+              </button>
+            </p>
             <p><strong>ACS Binding:</strong> {sp.spAcsBinding || 'POST'}</p>
           </div>
         </div>
