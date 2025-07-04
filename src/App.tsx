@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import SPConfig from './pages/SPConfig';
 import Initiate from './pages/Initiate';
 import ACS from './pages/ACS';
+import Metadata from './pages/Metadata';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
             <Route path="/sp/:spId/config" element={<SPConfig />} />
             <Route path="/sp/:spId/initiate" element={<Initiate />} />
             <Route path="/sp/:spId/acs" element={<ACS />} />
+            <Route path="/sp/:spId/metadata" element={<Metadata />} />
           </Routes>
         </main>
         <footer className="bg-gray-100 text-gray-500 py-4 text-center text-sm border-t">

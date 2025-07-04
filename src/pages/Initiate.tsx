@@ -93,7 +93,7 @@ const Initiate: React.FC = () => {
             </button>
             <button
               className="btn btn-secondary btn-sm"
-              onClick={() => alert('Metadata page - Coming soon!')}
+              onClick={() => navigate(`/sp/${spId}/metadata`)}
             >
               Metadata
             </button>
