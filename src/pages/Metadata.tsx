@@ -60,53 +60,33 @@ const Metadata: React.FC = () => {
   };
 
   const generateMetadataXml = (serviceProvider: ServiceProvider): string => {
-    const now = new Date().toISOString();
-    const validUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // 1 year from now
-
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" 
-                     entityID="${serviceProvider.entityId || ''}"
-                     validUntil="${validUntil}">
-  
+                     entityID="${serviceProvider.entityId || ''}">
   <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
-    
-    <!-- NameID Formats -->
-    <md:NameIDFormat>${serviceProvider.nameIdFormat || 'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified'}</md:NameIDFormat>
-    
-    <!-- Assertion Consumer Service -->
-    <md:AssertionConsumerService 
-      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-${serviceProvider.spAcsBinding || 'POST'}"
-      Location="${serviceProvider.acsUrl || ''}"
-      index="0" />
-    
-    <!-- Single Logout Service (if configured) -->
-    ${serviceProvider.sloUrl ? `
-    <md:SingleLogoutService 
+    ${serviceProvider.sloUrl ? `<md:SingleLogoutService 
       Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-${serviceProvider.spSloBinding || 'POST'}"
       Location="${serviceProvider.sloUrl}" />` : ''}
-    
-    <!-- Key Descriptor for signing -->
-    ${serviceProvider.certificate ? `
-    <md:KeyDescriptor use="signing">
+    ${serviceProvider.certificate ? `<md:KeyDescriptor use="signing">
       <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
         <ds:X509Data>
           <ds:X509Certificate>${serviceProvider.certificate.replace(/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s/g, '')}</ds:X509Certificate>
         </ds:X509Data>
       </ds:KeyInfo>
     </md:KeyDescriptor>` : ''}
-    
-    <!-- Key Descriptor for encryption (if configured) -->
-    ${serviceProvider.encryptionCertificate ? `
-    <md:KeyDescriptor use="encryption">
+    ${serviceProvider.encryptionCertificate ? `<md:KeyDescriptor use="encryption">
       <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
         <ds:X509Data>
           <ds:X509Certificate>${serviceProvider.encryptionCertificate.replace(/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s/g, '')}</ds:X509Certificate>
         </ds:X509Data>
       </ds:KeyInfo>
     </md:KeyDescriptor>` : ''}
-    
+    <md:NameIDFormat>${serviceProvider.nameIdFormat || 'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified'}</md:NameIDFormat>
+    <md:AssertionConsumerService 
+      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-${serviceProvider.spAcsBinding || 'POST'}"
+      Location="${serviceProvider.acsUrl || ''}"
+      index="0" />
   </md:SPSSODescriptor>
-  
 </md:EntityDescriptor>`;
 
     return xml;
