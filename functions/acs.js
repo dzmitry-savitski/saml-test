@@ -75,7 +75,7 @@ export async function onRequestPost(context) {
       relayState: relayState || null,
       spId,
       createdAt: Date.now(),
-      expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutes
+      expiresAt: Date.now() + (2 * 60 * 1000) // 1 minute
     };
     
     samlSessions.set(responseId, sessionData);

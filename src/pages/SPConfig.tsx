@@ -356,7 +356,7 @@ const SPConfig: React.FC = () => {
                 readOnly
               />
               <label className="label">
-                <span className="label-text-alt text-gray-500">ACS binding is fixed to POST</span>
+                <span className="label-text-alt text-gray-500">Only POST binding is supported</span>
               </label>
             </div>
           </div>

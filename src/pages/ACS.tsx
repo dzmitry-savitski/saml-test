@@ -24,8 +24,9 @@ const ACS: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [samlResponse, setSamlResponse] = useState<SAMLResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasProcessedResponse, setHasProcessedResponse] = useState(false);
 
-  // Load SP data and process SAML response on mount
+    // Load SP data and process SAML response on mount
   useEffect(() => {
     if (!spId) {
       setError('No Service Provider ID provided');
@@ -33,27 +34,39 @@ const ACS: React.FC = () => {
       return;
     }
 
+    // Wait for SP list to be loaded from localStorage
+    if (spList.length === 0) {
+      console.log('SP list is empty, waiting for data to load...');
+      return; // Don't set error yet, wait for data to load
+    }
+
     const foundSp = spList.find(s => s.id === spId);
     if (!foundSp) {
-      setError('Service Provider not found');
+      console.error('SP not found:', { spId, availableSPs: spList.map(s => s.id) });
+      setError(`Service Provider not found: ${spId}`);
       setIsLoading(false);
       return;
     }
 
-        setSp(foundSp);
+    setSp(foundSp);
     
-    // Check for response ID in URL parameters
-    const responseId = searchParams.get('response');
-    if (responseId) {
-      // Fetch SAML data from API using response ID
-      fetchSamlDataFromSession(responseId, foundSp);
-    } else {
-      setError('No response ID found in URL parameters');
-      setIsLoading(false);
+    // Only process SAML response once after SP is loaded
+    if (!hasProcessedResponse) {
+      const responseId = searchParams.get('response');
+      if (responseId) {
+        setHasProcessedResponse(true);
+        // Fetch SAML data from API using response ID
+        fetchSamlDataFromSession(responseId, foundSp, spId);
+      } else {
+        setError('No response ID found in URL parameters');
+        setIsLoading(false);
+      }
     }
-  }, [spId, spList]);
+  }, [spId, spList, hasProcessedResponse]);
 
-  const fetchSamlDataFromSession = async (responseId: string, sp: ServiceProvider) => {
+
+
+  const fetchSamlDataFromSession = async (responseId: string, sp: ServiceProvider, urlSpId: string) => {
     try {
       const response = await fetch('/acs', {
         method: 'POST',
@@ -76,6 +89,18 @@ const ACS: React.FC = () => {
       }
       
       const data = await response.json();
+      
+      console.log('SAML data received:', { 
+        spId: data.spId, 
+        currentSpId: sp.id, 
+        urlSpId: urlSpId,
+        relayState: data.relayState 
+      });
+      
+      // Verify SP ID matches
+      if (data.spId !== urlSpId) {
+        console.warn('SP ID mismatch:', { sessionSpId: data.spId, urlSpId });
+      }
       
       // Process the SAML response data
       processSAMLResponseData(data.samlResponse, sp, data.relayState || undefined);
@@ -333,21 +358,7 @@ const ACS: React.FC = () => {
             </div>
           </div>
 
-          {/* ACS Binding - POST only */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">ACS Binding</span>
-            </label>
-            <input
-              type="text"
-              className="input input-bordered bg-gray-100"
-              value="POST"
-              readOnly
-            />
-            <label className="label">
-              <span className="label-text-alt text-gray-500">Only POST binding is supported</span>
-            </label>
-          </div>
+
         </div>
       )}
     </div>
