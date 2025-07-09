@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
 import type { ServiceProvider } from '../types/samlConfig';
 import { generateSPCertificates } from '../utils/certificateGenerator';
+import { Button } from '../components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip';
+import { Edit, Trash2 } from 'lucide-react';
 
 const emptySP = (id: string): ServiceProvider => {
   // Generate certificates for the new SP
@@ -42,9 +46,11 @@ const idPattern = /^[a-zA-Z0-9-]+$/;
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { spList, addSP, setSpList } = useSPStore();
+  const { spList, addSP, setSpList, deleteSP } = useSPStore();
   const [newId, setNewId] = useState('');
   const [error, setError] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [spToDelete, setSpToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = () => {
@@ -101,60 +107,131 @@ const Home: React.FC = () => {
     e.target.value = '';
   };
 
+  const handleDeleteClick = (spId: string) => {
+    setSpToDelete(spId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (spToDelete) {
+      deleteSP(spToDelete);
+      setDeleteDialogOpen(false);
+      setSpToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setSpToDelete(null);
+  };
+
   return (
-    <div className="max-w-xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Service Providers</h1>
-      <div className="mb-4 flex gap-2 flex-wrap">
-        <button
-          className="bg-green-500 text-white px-4 py-1 rounded"
-          onClick={handleExport}
-        >
-          Export JSON
-        </button>
-        <button
-          className="bg-yellow-500 text-white px-4 py-1 rounded"
-          onClick={handleImportClick}
-        >
-          Import JSON
-        </button>
-        <input
-          type="file"
-          accept="application/json"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={handleImport}
-        />
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-100 flex flex-col">
+        {/* Main Content */}
+        <main className="flex-1 p-4">
+          <div className="max-w-2xl mx-auto space-y-6">
+            {/* Service Providers Section */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h1 className="text-2xl font-bold mb-4">Service Providers</h1>
+              <div className="mb-6 flex gap-2 flex-col sm:flex-row">
+                <input
+                  className="border px-2 py-1 rounded flex-1"
+                  type="text"
+                  placeholder="SP ID (letters, numbers, hyphens)"
+                  value={newId}
+                  onChange={e => setNewId(e.target.value)}
+                />
+                <Button variant="default" onClick={handleAdd}>Add SP</Button>
+              </div>
+              {error && <div className="text-red-500 mb-2">{error}</div>}
+              <ul className="space-y-2">
+                {spList.length === 0 && <li className="text-gray-500">No Service Providers yet.</li>}
+                {spList.map(sp => (
+                  <li key={sp.id} className="flex items-center justify-between border p-2 rounded hover:bg-gray-50">
+                    <Button
+                      variant="ghost"
+                      className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded hover:bg-gray-200 cursor-pointer"
+                      onClick={() => navigate(`/sp/${sp.id}/initiate`)}
+                    >
+                      {sp.id}
+                    </Button>
+                    <div className="flex gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/sp/${sp.id}/config`)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-sm">Edit</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(sp.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-sm">Delete</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Configuration Section */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold mb-4">Configuration</h2>
+              <div className="flex gap-2 flex-wrap">
+                <Button variant="default" onClick={handleExport}>Export Config</Button>
+                <Button variant="secondary" onClick={handleImportClick}>Import Config</Button>
+                <input
+                  type="file"
+                  accept="application/json"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  onChange={handleImport}
+                />
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Service Provider</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{spToDelete}"? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleDeleteCancel}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteConfirm}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-      <div className="mb-4 flex gap-2 flex-col sm:flex-row">
-        <input
-          className="border px-2 py-1 rounded"
-          type="text"
-          placeholder="SP ID (letters, numbers, hyphens)"
-          value={newId}
-          onChange={e => setNewId(e.target.value)}
-        />
-        <button
-          className="bg-blue-500 text-white px-4 py-1 rounded"
-          onClick={handleAdd}
-        >
-          Add SP
-        </button>
-      </div>
-      {error && <div className="text-red-500 mb-2">{error}</div>}
-      <ul className="space-y-2">
-        {spList.length === 0 && <li className="text-gray-500">No Service Providers yet.</li>}
-        {spList.map(sp => (
-          <li key={sp.id} className="flex items-center justify-between border p-2 rounded hover:bg-gray-50">
-            <button
-              className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded hover:bg-gray-200 cursor-pointer"
-              onClick={() => navigate(`/sp/${sp.id}/initiate`)}
-            >
-              {sp.id}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </TooltipProvider>
   );
 };
 

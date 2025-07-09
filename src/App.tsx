@@ -4,16 +4,13 @@ import SPConfig from './pages/SPConfig';
 import Initiate from './pages/Initiate';
 import ACS from './pages/ACS';
 import Metadata from './pages/Metadata';
+import Menu from './components/ui/Menu';
 
 function App() {
   return (
     <Router>
       <div className="min-h-screen flex flex-col bg-gray-50">
-        <header className="bg-blue-700 text-white py-6 shadow-md">
-          <div className="container mx-auto px-4">
-            <h1 className="text-3xl font-bold tracking-tight">SAML Test App</h1>
-          </div>
-        </header>
+        <Menu />
         <main className="flex-1 container mx-auto px-4 py-8 w-full max-w-3xl">
           <Routes>
             <Route path="/" element={<Home />} />
