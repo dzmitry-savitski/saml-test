@@ -3,8 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
 import type { ServiceProvider } from '../types/samlConfig';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Copy } from 'lucide-react';
+import { CopyInput } from '../components/ui/CopyInput';
 import { toast } from 'sonner';
 
 const Metadata: React.FC = () => {
@@ -145,78 +144,22 @@ const Metadata: React.FC = () => {
           
           {/* Info fields as non-editable inputs with copy icon */}
           <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Entity ID</label>
-              <div className="relative">
-                <Input
-                  value={sp.entityId || 'Not configured'}
-                  readOnly
-                  className="pr-10 text-xs"
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
-                  onClick={() => {
-                    navigator.clipboard.writeText(sp.entityId || '');
-                    toast.success('Entity ID copied!');
-                  }}
-                  tabIndex={-1}
-                  aria-label="Copy Entity ID"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">ACS URL</label>
-              <div className="relative">
-                <Input
-                  value={`${window.location.origin}/acs?sp=${spId}`}
-                  readOnly
-                  className="pr-10 text-xs"
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/acs?sp=${spId}`);
-                    toast.success('ACS URL copied!');
-                  }}
-                  tabIndex={-1}
-                  aria-label="Copy ACS URL"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">ACS Binding</label>
-              <div className="relative">
-                <Input
-                  value="POST (fixed)"
-                  readOnly
-                  className="pr-10 text-xs"
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
-                  onClick={() => {
-                    navigator.clipboard.writeText('POST');
-                    toast.success('ACS Binding copied!');
-                  }}
-                  tabIndex={-1}
-                  aria-label="Copy ACS Binding"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <CopyInput
+              value={sp.entityId || 'Not configured'}
+              label="Entity ID"
+              readOnly
+            />
+            <CopyInput
+              value={`${window.location.origin}/acs?sp=${spId}`}
+              label="ACS URL"
+              readOnly
+            />
+            <CopyInput
+              value="POST (fixed)"
+              label="ACS Binding"
+              readOnly
+              copyValue="POST"
+            />
           </div>
         </div>
       </div>
