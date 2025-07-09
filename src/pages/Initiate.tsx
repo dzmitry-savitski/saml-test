@@ -11,6 +11,7 @@ import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '../components/ui/PageHeader';
 import { BackButtons } from '../components/ui/BackButtons';
+import { SectionCard } from '../components/ui/SectionCard';
 
 const Initiate: React.FC = () => {
   const { spId } = useParams<{ spId: string }>();
@@ -103,7 +104,7 @@ const Initiate: React.FC = () => {
       </PageHeader>
 
       {/* Test Authentication Section */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <SectionCard>
         <div className="space-y-4">
           {/* Info fields as non-editable inputs with copy icon */}
           <div className="space-y-4">
@@ -230,10 +231,10 @@ const Initiate: React.FC = () => {
             </Alert>
           )}
         </div>
-      </div>
+      </SectionCard>
 
       {/* Configuration Section */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <SectionCard>
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Configuration</h2>
           <div className="flex gap-2 flex-wrap">
@@ -257,7 +258,7 @@ const Initiate: React.FC = () => {
             </Button>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

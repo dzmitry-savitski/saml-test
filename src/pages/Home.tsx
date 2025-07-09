@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip';
 import { Edit, Trash2 } from 'lucide-react';
+import { SectionCard } from '../components/ui/SectionCard';
 
 const emptySP = (id: string): ServiceProvider => {
   // Generate certificates for the new SP
@@ -132,7 +133,7 @@ const Home: React.FC = () => {
         <main className="flex-1 p-4">
           <div className="max-w-2xl mx-auto space-y-6">
             {/* Service Providers Section */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
+            <SectionCard>
               <h1 className="text-2xl font-bold mb-4">Service Providers</h1>
               <div className="mb-6 flex gap-2 flex-col sm:flex-row">
                 <input
@@ -191,10 +192,10 @@ const Home: React.FC = () => {
                   </li>
                 ))}
               </ul>
-            </div>
+            </SectionCard>
 
             {/* Configuration Section */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
+            <SectionCard>
               <h2 className="text-xl font-bold mb-4">Configuration</h2>
               <div className="flex gap-2 flex-wrap">
                 <Button variant="default" onClick={handleExport}>Export Config</Button>
@@ -207,7 +208,7 @@ const Home: React.FC = () => {
                   onChange={handleImport}
                 />
               </div>
-            </div>
+            </SectionCard>
           </div>
         </main>
 

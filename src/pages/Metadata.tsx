@@ -7,6 +7,7 @@ import { CopyInput } from '../components/ui/CopyInput';
 import { toast } from 'sonner';
 import { PageHeader } from '../components/ui/PageHeader';
 import { BackButtons } from '../components/ui/BackButtons';
+import { SectionCard } from '../components/ui/SectionCard';
 
 const Metadata: React.FC = () => {
   const { spId } = useParams<{ spId: string }>();
@@ -136,7 +137,7 @@ const Metadata: React.FC = () => {
       </PageHeader>
 
       {/* SP Info */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <SectionCard>
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Service Provider: {sp.id}</h2>
           
@@ -160,10 +161,10 @@ const Metadata: React.FC = () => {
             />
           </div>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Metadata XML Display */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <SectionCard>
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Generated Metadata XML</h2>
           
@@ -199,7 +200,7 @@ const Metadata: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
+      </SectionCard>
     </div>
   );
 };

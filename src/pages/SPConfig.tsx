@@ -11,6 +11,7 @@ import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '../components/ui/PageHeader';
 import { BackButtons } from '../components/ui/BackButtons';
+import { SectionCard } from '../components/ui/SectionCard';
 
 const SPConfig: React.FC = () => {
   const { spId } = useParams<{ spId: string }>();
@@ -258,7 +259,7 @@ const SPConfig: React.FC = () => {
       </PageHeader>
 
       {/* Service Provider Configuration */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <SectionCard>
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Service Provider Configuration</h2>
           
@@ -477,10 +478,10 @@ const SPConfig: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
       {/* IDP Configuration */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <SectionCard>
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Identity Provider Configuration</h2>
           
@@ -616,7 +617,7 @@ const SPConfig: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Save Button */}
       <div className="flex justify-end gap-2">
