@@ -167,7 +167,7 @@ export function base64EncodeSamlRequest(samlRequest: string): string {
 /**
  * Initiates SAML authentication by redirecting to IDP
  */
-export function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = false): void {
+export function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = false, relayState?: string): void {
   try {
     // Generate the SAML request
     let samlRequest = createAuthnRequest(sp, forceAuthn);
@@ -192,9 +192,12 @@ export function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = fals
       encodedRequest = base64EncodeSamlRequest(samlRequest); // base64 only
     }
     
+    // Use provided relayState or fall back to sp.id
+    const finalRelayState = relayState || sp.id;
+    
     // Redirect to IDP based on binding
     if (sp.idp.singleSignOnBinding === 'GET') {
-      const url = `${sp.idp.ssoUrl}?SAMLRequest=${encodeURIComponent(encodedRequest)}&RelayState=${encodeURIComponent(sp.id)}`;
+      const url = `${sp.idp.ssoUrl}?SAMLRequest=${encodeURIComponent(encodedRequest)}&RelayState=${encodeURIComponent(finalRelayState)}`;
       window.location.href = url;
     } else {
       // POST binding - create a form and submit it
@@ -211,7 +214,7 @@ export function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = fals
       const relayInput = document.createElement('input');
       relayInput.type = 'hidden';
       relayInput.name = 'RelayState';
-      relayInput.value = sp.id;
+      relayInput.value = finalRelayState;
       
       form.appendChild(samlInput);
       form.appendChild(relayInput);

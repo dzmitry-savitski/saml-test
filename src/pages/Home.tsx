@@ -77,7 +77,7 @@ const Home: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'saml-service-providers.json';
+    a.download = 'saml-test-config.json';
     a.click();
     URL.revokeObjectURL(url);
   };
