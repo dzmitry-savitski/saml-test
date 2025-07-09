@@ -4,6 +4,7 @@ import SPConfig from './pages/SPConfig';
 import Initiate from './pages/Initiate';
 import ACS from './pages/ACS';
 import Metadata from './pages/Metadata';
+import About from './pages/About';
 import Menu from './components/ui/Menu';
 import { Toaster } from './components/ui/sonner';
 
@@ -16,6 +17,7 @@ function App() {
         <main className="flex-1 container mx-auto px-4 py-8 w-full max-w-3xl">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
             <Route path="/sp/:spId/config" element={<SPConfig />} />
             <Route path="/sp/:spId/initiate" element={<Initiate />} />
             <Route path="/sp/:spId/acs" element={<ACS />} />

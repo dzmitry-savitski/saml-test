@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
 import { getStoredRequestId, clearStoredRequestId, decodeSamlResponse } from '../utils/samlUtils';
 import type { ServiceProvider } from '../types/samlConfig';
+import { Button } from '../components/ui/button';
+import { PageHeader } from '../components/ui/PageHeader';
+import { BackButtons } from '../components/ui/BackButtons';
+import { SectionCard } from '../components/ui/SectionCard';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { toast } from 'sonner';
 
 interface SAMLResponse {
   nameId?: string;
@@ -16,7 +22,6 @@ interface SAMLResponse {
 
 const ACS: React.FC = () => {
   const { spId } = useParams<{ spId: string }>();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { spList } = useSPStore();
   
@@ -192,173 +197,131 @@ const ACS: React.FC = () => {
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">SAML Response Error</h1>
-          <button 
-            onClick={() => navigate('/')}
-            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-          >
-            Back to List
-          </button>
-        </div>
+      <div className="space-y-6 max-w-2xl mx-auto">
+        <PageHeader title="SAML Response Error">
+          <BackButtons showBackToSP={false} />
+        </PageHeader>
         
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <span>{error}</span>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   if (!sp) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        <span>Service Provider not found</span>
-      </div>
+      <Alert variant="destructive" className="max-w-xl mx-auto mt-8">
+        <AlertDescription>Service Provider not found</AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">SAML Response</h1>
-        <button 
-          onClick={() => navigate('/')}
-          className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-        >
-          Back to List
-        </button>
-      </div>
-
-      {/* SP Info */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Service Provider: {sp.id}</h2>
-          
-          <div className="flex gap-2 flex-wrap">
-            <button
-              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-              onClick={() => navigate(`/sp/${spId}/config`)}
-            >
-              Configure
-            </button>
-            <button
-              className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-              onClick={() => navigate(`/sp/${spId}/metadata`)}
-            >
-              Metadata
-            </button>
-            <button
-              className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
-              onClick={() => navigate(`/sp/${spId}/initiate`)}
-            >
-              Initiate Auth
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <PageHeader title={`SP: ${sp.id}`}>
+        <BackButtons spId={spId} />
+      </PageHeader>
 
       {/* SAML Response Content */}
       {samlResponse && (
         <div className="space-y-6">
           {/* Status */}
-          <div className={`px-4 py-3 rounded ${samlResponse.status === 'success' ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700'}`}>
-            <div>
-              <h3 className="font-bold">
-                {samlResponse.status === 'success' ? 'Authentication Successful' : 'Authentication Failed'}
-              </h3>
-              {samlResponse.errorMessage && (
-                <div className="text-sm">{samlResponse.errorMessage}</div>
+          <Alert className={samlResponse.status === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}>
+            <AlertDescription>
+              <div>
+                <h3 className="font-bold">
+                  {samlResponse.status === 'success' ? 'Authentication Successful' : 'Authentication Failed'}
+                </h3>
+                {samlResponse.errorMessage && (
+                  <div className="text-sm">{samlResponse.errorMessage}</div>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+
+          {/* SAML Response Details */}
+          <SectionCard>
+            <div className="space-y-6">
+              {/* NameID */}
+              {samlResponse.nameId && (
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">NameID</h3>
+                  <div className="bg-gray-100 p-4 rounded-lg font-mono text-sm">
+                    {samlResponse.nameId}
+                  </div>
+                </div>
+              )}
+
+              {/* Attributes */}
+              {Object.keys(samlResponse.attributes).length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Attributes</h3>
+                  <div className="space-y-2">
+                    {Object.entries(samlResponse.attributes).map(([name, values]) => (
+                      <div key={name} className="border-b border-gray-300 pb-2">
+                        <div className="font-semibold text-sm">{name}</div>
+                        <div className="text-sm">
+                          {values.map((value, index) => (
+                            <div key={index} className="bg-gray-100 p-2 rounded mt-1 font-mono text-xs">
+                              {value}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Request ID */}
+              {samlResponse.requestId && (
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Request ID</h3>
+                  <div className="bg-gray-100 p-4 rounded-lg font-mono text-sm">
+                    {samlResponse.requestId}
+                  </div>
+                </div>
+              )}
+
+              {/* Relay State */}
+              {samlResponse.relayState && (
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Relay State</h3>
+                  <div className="bg-gray-100 p-4 rounded-lg font-mono text-sm">
+                    {samlResponse.relayState}
+                  </div>
+                </div>
               )}
             </div>
-          </div>
-
-          {/* NameID */}
-          {samlResponse.nameId && (
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">NameID</h2>
-                <div className="bg-gray-100 p-4 rounded-lg font-mono text-sm">
-                  {samlResponse.nameId}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Attributes */}
-          {Object.keys(samlResponse.attributes).length > 0 && (
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Attributes</h2>
-                <div className="space-y-2">
-                  {Object.entries(samlResponse.attributes).map(([name, values]) => (
-                    <div key={name} className="border-b border-gray-300 pb-2">
-                      <div className="font-semibold text-sm">{name}</div>
-                      <div className="text-sm">
-                        {values.map((value, index) => (
-                          <div key={index} className="bg-gray-100 p-2 rounded mt-1 font-mono text-xs">
-                            {value}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Request ID */}
-          {samlResponse.requestId && (
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Request ID</h2>
-                <div className="bg-gray-100 p-4 rounded-lg font-mono text-sm">
-                  {samlResponse.requestId}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Relay State */}
-          {samlResponse.relayState && (
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Relay State</h2>
-                <div className="bg-gray-100 p-4 rounded-lg font-mono text-sm">
-                  {samlResponse.relayState}
-                </div>
-              </div>
-            </div>
-          )}
+          </SectionCard>
 
           {/* Raw XML */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <SectionCard>
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Raw SAML XML</h2>
+              <h2 className="text-xl font-semibold">Raw SAML Response XML</h2>
               <div className="space-y-2">
                 <textarea
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs resize-none overflow-y-auto"
                   rows={15}
                   value={samlResponse.rawXml}
                   readOnly
+                  style={{ maxHeight: '400px' }}
                 />
               </div>
               <div className="flex justify-end mt-4">
-                <button
-                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                <Button
+                  variant="outline"
                   onClick={() => {
                     navigator.clipboard.writeText(samlResponse.rawXml);
-                    alert('Raw XML copied to clipboard!');
+                    toast.success('Raw XML copied to clipboard!');
                   }}
                 >
                   Copy XML
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
-
-
+          </SectionCard>
         </div>
       )}
     </div>
