@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '../components/ui/input';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageHeader } from '../components/ui/PageHeader';
+import { BackButtons } from '../components/ui/BackButtons';
 
 const Initiate: React.FC = () => {
   const { spId } = useParams<{ spId: string }>();
@@ -96,10 +98,9 @@ const Initiate: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Test Authentication</h1>
-        <Button variant="outline" onClick={() => navigate('/')}>Back to Home</Button>
-      </div>
+      <PageHeader title="Test Authentication">
+        <BackButtons spId={spId} showBackToSP={false} />
+      </PageHeader>
 
       {/* Test Authentication Section */}
       <div className="bg-white rounded-lg shadow-lg p-6">

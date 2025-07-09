@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageHeader } from '../components/ui/PageHeader';
+import { BackButtons } from '../components/ui/BackButtons';
 
 const SPConfig: React.FC = () => {
   const { spId } = useParams<{ spId: string }>();
@@ -251,13 +253,9 @@ const SPConfig: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Configure Service Provider</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/')}>Back to Home</Button>
-          <Button variant="outline" onClick={() => navigate(`/sp/${spId}/initiate`)}>Back to SP</Button>
-        </div>
-      </div>
+      <PageHeader title="Configure Service Provider">
+        <BackButtons spId={spId} />
+      </PageHeader>
 
       {/* Service Provider Configuration */}
       <div className="bg-white rounded-lg shadow-lg p-6">

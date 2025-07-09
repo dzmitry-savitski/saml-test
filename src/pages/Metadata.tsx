@@ -5,6 +5,8 @@ import type { ServiceProvider } from '../types/samlConfig';
 import { Button } from '../components/ui/button';
 import { CopyInput } from '../components/ui/CopyInput';
 import { toast } from 'sonner';
+import { PageHeader } from '../components/ui/PageHeader';
+import { BackButtons } from '../components/ui/BackButtons';
 
 const Metadata: React.FC = () => {
   const { spId } = useParams<{ spId: string }>();
@@ -129,13 +131,9 @@ const Metadata: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">SP Metadata</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/')}>Back to Home</Button>
-          <Button variant="outline" onClick={() => navigate(`/sp/${spId}/initiate`)}>Back to SP</Button>
-        </div>
-      </div>
+      <PageHeader title="SP Metadata">
+        <BackButtons spId={spId} />
+      </PageHeader>
 
       {/* SP Info */}
       <div className="bg-white rounded-lg shadow-lg p-6">
