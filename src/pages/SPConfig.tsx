@@ -220,14 +220,14 @@ const SPConfig: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="loading loading-spinner loading-lg"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   if (!formData) {
     return (
-      <div className="alert alert-error">
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
         <span>Service Provider not found</span>
       </div>
     );
@@ -240,40 +240,40 @@ const SPConfig: React.FC = () => {
         <div className="flex gap-2">
           <button 
             onClick={() => navigate(`/sp/${spId}/initiate`)}
-            className="btn btn-outline btn-sm"
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           >
             Back to SP
           </button>
           <button 
             onClick={() => navigate('/')}
-            className="btn btn-outline btn-sm"
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           >
             Back to List
           </button>
         </div>
       </div>
 
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title">Service Provider Configuration</h2>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Service Provider Configuration</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Entity ID */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Entity ID *</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Entity ID *
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  className={`input input-bordered flex-1 ${errors.entityId ? 'input-error' : ''}`}
+                  className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.entityId ? 'border-red-500' : 'border-gray-300'}`}
                   value={formData.entityId}
                   onChange={(e) => handleInputChange('entityId', e.target.value)}
                   placeholder="https://sp.example.com"
                 />
                 <button
                   type="button"
-                  className="btn btn-outline btn-sm"
+                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
                   onClick={() => {
                     if (formData.entityId) {
                       navigator.clipboard.writeText(formData.entityId);
@@ -286,19 +286,17 @@ const SPConfig: React.FC = () => {
                 </button>
               </div>
               {errors.entityId && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.entityId}</span>
-                </label>
+                <p className="text-sm text-red-600">{errors.entityId}</p>
               )}
             </div>
 
             {/* NameID Format */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">NameID Format *</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                NameID Format *
               </label>
               <select
-                className={`select select-bordered ${errors.nameIdFormat ? 'select-error' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.nameIdFormat ? 'border-red-500' : 'border-gray-300'}`}
                 value={formData.nameIdFormat}
                 onChange={(e) => handleInputChange('nameIdFormat', e.target.value)}
               >
@@ -310,27 +308,25 @@ const SPConfig: React.FC = () => {
                 <option value="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">Entity</option>
               </select>
               {errors.nameIdFormat && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.nameIdFormat}</span>
-                </label>
+                <p className="text-sm text-red-600">{errors.nameIdFormat}</p>
               )}
             </div>
 
             {/* ACS URL */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">ACS URL</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                ACS URL
               </label>
               <div className="flex gap-2">
                 <input
                   type="url"
-                  className="input input-bordered bg-gray-100"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                   value={`${window.location.origin}/acs?sp=${spId}`}
                   readOnly
                 />
                 <button
                   type="button"
-                  className="btn btn-outline btn-sm"
+                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
                   onClick={() => {
                     navigator.clipboard.writeText(`${window.location.origin}/acs?sp=${spId}`);
                     alert('ACS URL copied to clipboard!');
@@ -339,44 +335,40 @@ const SPConfig: React.FC = () => {
                   Copy
                 </button>
               </div>
-              <label className="label">
-                <span className="label-text-alt text-gray-500">This is the ACS URL to use in your IDP configuration</span>
-              </label>
+              <p className="text-sm text-gray-500">This is the ACS URL to use in your IDP configuration</p>
             </div>
 
             {/* ACS Binding - POST only */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">ACS Binding</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                ACS Binding
               </label>
               <input
                 type="text"
-                className="input input-bordered bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                 value="POST"
                 readOnly
               />
-              <label className="label">
-                <span className="label-text-alt text-gray-500">Only POST binding is supported</span>
-              </label>
+              <p className="text-sm text-gray-500">Only POST binding is supported</p>
             </div>
           </div>
 
           {/* Toggles */}
           <div className="flex gap-4 mt-4">
-            <label className="label cursor-pointer">
-              <span className="label-text mr-2">Sign AuthnRequest</span>
+            <label className="flex items-center cursor-pointer">
+              <span className="mr-2 text-sm font-medium text-gray-700">Sign AuthnRequest</span>
               <input
                 type="checkbox"
-                className="toggle toggle-primary"
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                 checked={formData.signAuthnRequest}
                 onChange={(e) => handleInputChange('signAuthnRequest', e.target.checked)}
               />
             </label>
-            <label className="label cursor-pointer">
-              <span className="label-text mr-2">Allow Create</span>
+            <label className="flex items-center cursor-pointer">
+              <span className="mr-2 text-sm font-medium text-gray-700">Allow Create</span>
               <input
                 type="checkbox"
-                className="toggle toggle-primary"
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                 checked={formData.allowCreate}
                 onChange={(e) => handleInputChange('allowCreate', e.target.checked)}
               />
@@ -388,16 +380,16 @@ const SPConfig: React.FC = () => {
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-lg font-semibold">Certificates and Keys</h3>
               <button
-                className="btn btn-warning btn-sm"
+                className="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
                 onClick={regenerateCertificates}
               >
                 Regenerate Certificates
               </button>
             </div>
-            <div className="alert alert-info">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div>
-                <h4 className="font-bold">Certificate Information</h4>
-                <div className="text-xs">
+                <h4 className="font-bold text-blue-900">Certificate Information</h4>
+                <div className="text-xs text-blue-800 mt-2">
                   <p>• Signing certificates are used to sign SAML requests and verify responses</p>
                   <p>• Encryption certificates are used to encrypt SAML assertions</p>
                   <p>• Certificates are auto-generated when creating a new SP</p>
@@ -409,61 +401,57 @@ const SPConfig: React.FC = () => {
 
           {/* Certificates and Keys */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Signing Certificate (PEM) *</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Signing Certificate (PEM) *
               </label>
               <textarea
-                className={`textarea textarea-bordered h-32 ${errors.certificate ? 'textarea-error' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none ${errors.certificate ? 'border-red-500' : 'border-gray-300'}`}
                 value={formData.certificate}
                 onChange={(e) => handleInputChange('certificate', e.target.value)}
                 placeholder="-----BEGIN CERTIFICATE-----..."
               />
               {errors.certificate && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.certificate}</span>
-                </label>
+                <p className="text-sm text-red-600">{errors.certificate}</p>
               )}
             </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Signing Private Key (PEM) *</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Signing Private Key (PEM) *
               </label>
               <textarea
-                className={`textarea textarea-bordered h-32 ${errors.privateKey ? 'textarea-error' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none ${errors.privateKey ? 'border-red-500' : 'border-gray-300'}`}
                 value={formData.privateKey}
                 onChange={(e) => handleInputChange('privateKey', e.target.value)}
                 placeholder="-----BEGIN PRIVATE KEY-----..."
               />
               {errors.privateKey && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.privateKey}</span>
-                </label>
+                <p className="text-sm text-red-600">{errors.privateKey}</p>
               )}
             </div>
           </div>
 
           {/* Optional Encryption */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Encryption Certificate (PEM)</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Encryption Certificate (PEM)
               </label>
               <textarea
-                className="textarea textarea-bordered h-32"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
                 value={formData.encryptionCertificate || ''}
                 onChange={(e) => handleInputChange('encryptionCertificate', e.target.value)}
                 placeholder="-----BEGIN CERTIFICATE-----..."
               />
             </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Encryption Key (PEM)</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Encryption Key (PEM)
               </label>
               <textarea
-                className="textarea textarea-bordered h-32"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
                 value={formData.encryptionKey || ''}
                 onChange={(e) => handleInputChange('encryptionKey', e.target.value)}
                 placeholder="-----BEGIN PRIVATE KEY-----..."
@@ -474,79 +462,75 @@ const SPConfig: React.FC = () => {
       </div>
 
       {/* IDP Configuration */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title">Identity Provider Configuration</h2>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Identity Provider Configuration</h2>
           
           {/* Metadata Import */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Import IDP Metadata</span>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Import IDP Metadata
             </label>
             <div className="flex gap-2">
               <input
                 type="url"
-                className="input input-bordered flex-1"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={idpMetadataUrl}
                 onChange={(e) => setIdpMetadataUrl(e.target.value)}
                 placeholder="https://idp.example.com/metadata"
               />
               <button
-                className={`btn btn-primary ${isImportingMetadata ? 'loading' : ''}`}
+                className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 ${isImportingMetadata ? 'animate-pulse' : ''}`}
                 onClick={importIdpMetadata}
                 disabled={!idpMetadataUrl.trim() || isImportingMetadata}
               >
-                Import
+                {isImportingMetadata ? 'Importing...' : 'Import'}
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             {/* IDP Entity ID */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">IDP Entity ID *</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                IDP Entity ID *
               </label>
               <input
                 type="text"
-                className={`input input-bordered ${errors['idp.entityId'] ? 'input-error' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['idp.entityId'] ? 'border-red-500' : 'border-gray-300'}`}
                 value={formData.idp.entityId}
                 onChange={(e) => handleInputChange('idp.entityId', e.target.value)}
                 placeholder="https://idp.example.com"
               />
               {errors['idp.entityId'] && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors['idp.entityId']}</span>
-                </label>
+                <p className="text-sm text-red-600">{errors['idp.entityId']}</p>
               )}
             </div>
 
             {/* SSO URL */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">SSO URL *</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                SSO URL *
               </label>
               <input
                 type="url"
-                className={`input input-bordered ${errors['idp.ssoUrl'] ? 'input-error' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['idp.ssoUrl'] ? 'border-red-500' : 'border-gray-300'}`}
                 value={formData.idp.ssoUrl}
                 onChange={(e) => handleInputChange('idp.ssoUrl', e.target.value)}
                 placeholder="https://idp.example.com/sso"
               />
               {errors['idp.ssoUrl'] && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors['idp.ssoUrl']}</span>
-                </label>
+                <p className="text-sm text-red-600">{errors['idp.ssoUrl']}</p>
               )}
             </div>
 
             {/* SSO Binding */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">SSO Binding</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                SSO Binding
               </label>
               <select
-                className="select select-bordered"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.idp.singleSignOnBinding}
                 onChange={(e) => handleInputChange('idp.singleSignOnBinding', e.target.value as 'POST' | 'GET')}
               >
@@ -556,13 +540,13 @@ const SPConfig: React.FC = () => {
             </div>
 
             {/* Want AuthnRequests Signed */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Want AuthnRequests Signed</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Want AuthnRequests Signed
               </label>
               <input
                 type="checkbox"
-                className="toggle toggle-primary"
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                 checked={formData.idp.wantAuthnRequestsSigned}
                 onChange={(e) => handleInputChange('idp.wantAuthnRequestsSigned', e.target.checked)}
               />
@@ -570,44 +554,42 @@ const SPConfig: React.FC = () => {
           </div>
 
           {/* IDP Certificate */}
-          <div className="form-control mt-4">
-            <label className="label">
-              <span className="label-text">IDP Certificate (PEM) *</span>
+          <div className="space-y-2 mt-4">
+            <label className="block text-sm font-medium text-gray-700">
+              IDP Certificate (PEM) *
             </label>
             <textarea
-              className={`textarea textarea-bordered h-32 ${errors['idp.certificate'] ? 'textarea-error' : ''}`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none ${errors['idp.certificate'] ? 'border-red-500' : 'border-gray-300'}`}
               value={formData.idp.certificate}
               onChange={(e) => handleInputChange('idp.certificate', e.target.value)}
               placeholder="-----BEGIN CERTIFICATE-----..."
             />
             {errors['idp.certificate'] && (
-              <label className="label">
-                <span className="label-text-alt text-error">{errors['idp.certificate']}</span>
-              </label>
+              <p className="text-sm text-red-600">{errors['idp.certificate']}</p>
             )}
           </div>
 
           {/* Optional SLO */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">SLO URL</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                SLO URL
               </label>
               <input
                 type="url"
-                className="input input-bordered"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.idp.sloUrl || ''}
                 onChange={(e) => handleInputChange('idp.sloUrl', e.target.value)}
                 placeholder="https://idp.example.com/slo"
               />
             </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">SLO Binding</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                SLO Binding
               </label>
               <select
-                className="select select-bordered"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.idp.sloBinding || 'POST'}
                 onChange={(e) => handleInputChange('idp.sloBinding', e.target.value as 'POST' | 'GET')}
               >
@@ -623,16 +605,16 @@ const SPConfig: React.FC = () => {
       <div className="flex justify-end gap-2">
         <button
           onClick={() => navigate('/')}
-          className="btn btn-outline"
+          className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={handleSave}
-          className={`btn btn-primary ${isSaving ? 'loading' : ''}`}
+          className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 ${isSaving ? 'animate-pulse' : ''}`}
           disabled={isSaving}
         >
-          Save Configuration
+          {isSaving ? 'Saving...' : 'Save Configuration'}
         </button>
       </div>
     </div>

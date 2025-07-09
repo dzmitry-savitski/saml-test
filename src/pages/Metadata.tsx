@@ -110,7 +110,7 @@ const Metadata: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="loading loading-spinner loading-lg"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         {isDownloadMode && <span className="ml-2">Preparing metadata download...</span>}
       </div>
     );
@@ -118,7 +118,7 @@ const Metadata: React.FC = () => {
 
   if (!sp) {
     return (
-      <div className="alert alert-error">
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
         <span>Service Provider not found</span>
       </div>
     );
@@ -131,13 +131,13 @@ const Metadata: React.FC = () => {
         <div className="flex gap-2">
           <button 
             onClick={() => navigate(`/sp/${spId}/initiate`)}
-            className="btn btn-outline btn-sm"
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           >
             Back to SP
           </button>
           <button 
             onClick={() => navigate('/')}
-            className="btn btn-outline btn-sm"
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           >
             Back to List
           </button>
@@ -145,15 +145,15 @@ const Metadata: React.FC = () => {
       </div>
 
       {/* SP Info */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title">Service Provider: {sp.id}</h2>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Service Provider: {sp.id}</h2>
           <div className="text-sm text-gray-600">
             <p><strong>Entity ID:</strong> {sp.entityId || 'Not configured'}</p>
             <p>
               <strong>ACS URL:</strong> {`${window.location.origin}/acs?sp=${spId}`}
               <button
-                className="btn btn-ghost btn-xs ml-2"
+                className="px-2 py-1 text-xs bg-transparent hover:bg-gray-100 rounded ml-2 transition-colors"
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/acs?sp=${spId}`);
                   alert('ACS URL copied to clipboard!');
@@ -168,19 +168,19 @@ const Metadata: React.FC = () => {
       </div>
 
       {/* Actions */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title">Actions</h2>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Actions</h2>
           <div className="flex gap-2 flex-wrap">
             <button
-              className="btn btn-primary btn-sm"
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
               onClick={handleDownload}
               disabled={!metadataXml}
             >
               Download Metadata
             </button>
             <button
-              className="btn btn-secondary btn-sm"
+              className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors disabled:opacity-50"
               onClick={copyToClipboard}
               disabled={!metadataXml}
             >
@@ -191,18 +191,18 @@ const Metadata: React.FC = () => {
       </div>
 
       {/* Metadata XML Display */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title">Generated Metadata XML</h2>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Generated Metadata XML</h2>
           
           {!sp.entityId || !sp.acsUrl ? (
-            <div className="alert alert-warning">
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
               <span>Please configure the Entity ID and ACS URL before generating metadata.</span>
             </div>
           ) : (
-            <div className="form-control">
+            <div className="space-y-2">
               <textarea
-                className="textarea textarea-bordered font-mono text-xs h-96"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs h-96 resize-none focus:outline-none"
                 value={metadataXml}
                 readOnly
                 placeholder="Metadata XML will be generated here..."
@@ -213,22 +213,22 @@ const Metadata: React.FC = () => {
       </div>
 
       {/* Metadata URL */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title">Metadata URL</h2>
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Share this URL with your Identity Provider:</span>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Metadata URL</h2>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Share this URL with your Identity Provider:
             </label>
             <div className="flex gap-2">
               <input
                 type="text"
-                className="input input-bordered flex-1 font-mono text-sm"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:outline-none"
                 value={`${window.location.origin}/sp/${spId}/metadata?download=true`}
                 readOnly
               />
               <button
-                className="btn btn-outline btn-sm"
+                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/sp/${spId}/metadata?download=true`);
                   alert('Metadata URL copied to clipboard!');

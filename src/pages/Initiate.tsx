@@ -89,14 +89,14 @@ const Initiate: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="loading loading-spinner loading-lg"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   if (!sp) {
     return (
-      <div className="alert alert-error">
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
         <span>Service Provider not found</span>
       </div>
     );
@@ -108,32 +108,32 @@ const Initiate: React.FC = () => {
         <h1 className="text-2xl font-bold">SAML Authentication</h1>
         <button 
           onClick={() => navigate('/')}
-          className="btn btn-outline btn-sm"
+          className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
         >
           Back to List
         </button>
       </div>
 
       {/* SP Info and Navigation */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title">Service Provider: {sp.id}</h2>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Service Provider: {sp.id}</h2>
           
           <div className="flex gap-2 flex-wrap">
             <button
-              className="btn btn-primary btn-sm"
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
               onClick={() => navigate(`/sp/${spId}/config`)}
             >
               Configure
             </button>
             <button
-              className="btn btn-secondary btn-sm"
+              className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
               onClick={() => navigate(`/sp/${spId}/metadata`)}
             >
               Metadata
             </button>
             <button
-              className="btn btn-error btn-sm"
+              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
               onClick={handleDelete}
             >
               Delete
@@ -143,35 +143,33 @@ const Initiate: React.FC = () => {
       </div>
 
       {/* Authentication Initiation */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title">Initiate Authentication</h2>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Initiate Authentication</h2>
           
           <div className="space-y-4">
-            <div className="form-control">
-              <label className="label cursor-pointer">
-                <span className="label-text">Force Re-authentication</span>
+            <div className="space-y-2">
+              <label className="flex items-center cursor-pointer">
+                <span className="mr-2 text-sm font-medium text-gray-700">Force Re-authentication</span>
                 <input
                   type="checkbox"
-                  className="toggle toggle-primary"
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                   checked={forceAuthn}
                   onChange={(e) => setForceAuthn(e.target.checked)}
                 />
               </label>
-              <label className="label">
-                <span className="label-text-alt">When enabled, the user will be forced to re-authenticate even if they have an active session.</span>
-              </label>
+              <p className="text-sm text-gray-500">When enabled, the user will be forced to re-authenticate even if they have an active session.</p>
             </div>
 
-            <div className="alert alert-info">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div>
-                <h3 className="font-bold">Ready to authenticate</h3>
-                <div className="text-xs">
+                <h3 className="font-bold text-blue-900">Ready to authenticate</h3>
+                <div className="text-xs text-blue-800 mt-2">
                   <p>
                     <strong>Entity ID:</strong> {sp.entityId || 'Not configured'}
                     {sp.entityId && (
                       <button
-                        className="btn btn-ghost btn-xs ml-2"
+                        className="px-2 py-1 text-xs bg-transparent hover:bg-blue-100 rounded ml-2 transition-colors"
                         onClick={() => {
                           navigator.clipboard.writeText(sp.entityId);
                           alert('Entity ID copied to clipboard!');
@@ -189,14 +187,14 @@ const Initiate: React.FC = () => {
 
             <div className="flex gap-2">
               <button
-                className="btn btn-outline flex-1"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
                 onClick={handlePreviewRequest}
                 disabled={!sp.entityId || !sp.idp.entityId || !sp.idp.ssoUrl}
               >
                 Preview Request
               </button>
               <button
-                className={`btn btn-primary flex-1 ${isInitiating ? 'loading' : ''}`}
+                className={`flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 ${isInitiating ? 'animate-pulse' : ''}`}
                 onClick={handleInitiateAuth}
                 disabled={isInitiating || !sp.entityId || !sp.idp.entityId || !sp.idp.ssoUrl}
               >
@@ -205,7 +203,7 @@ const Initiate: React.FC = () => {
             </div>
 
             {(!sp.entityId || !sp.idp.entityId || !sp.idp.ssoUrl) && (
-              <div className="alert alert-warning">
+              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
                 <span>Please configure the Service Provider and Identity Provider settings before initiating authentication.</span>
               </div>
             )}
@@ -214,19 +212,19 @@ const Initiate: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title">Quick Actions</h2>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Quick Actions</h2>
           
           <div className="flex gap-2 flex-wrap">
             <button
-              className="btn btn-outline btn-sm"
+              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
               onClick={() => navigate(`/sp/${spId}/acs`)}
             >
               View ACS Page
             </button>
             <button
-              className="btn btn-outline btn-sm"
+              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
               onClick={() => {
                 const url = `${window.location.origin}/sp/${spId}/acs`;
                 navigator.clipboard.writeText(url);
@@ -241,17 +239,17 @@ const Initiate: React.FC = () => {
 
       {/* SAML Request Preview Modal */}
       {showPreview && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-4xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4">
             <h3 className="font-bold text-lg mb-4">SAML Request Preview</h3>
             
             <div className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Encoded SAML Request (Base64 + Deflate)</span>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Encoded SAML Request (Base64 + Deflate)
                 </label>
                 <textarea
-                  className="textarea textarea-bordered font-mono text-xs"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs resize-none"
                   rows={8}
                   value={samlRequestPreview}
                   readOnly
@@ -260,7 +258,7 @@ const Initiate: React.FC = () => {
               
               <div className="flex gap-2">
                 <button
-                  className="btn btn-outline btn-sm"
+                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
                   onClick={() => {
                     navigator.clipboard.writeText(samlRequestPreview);
                     alert('SAML Request copied to clipboard!');
@@ -269,7 +267,7 @@ const Initiate: React.FC = () => {
                   Copy to Clipboard
                 </button>
                 <button
-                  className="btn btn-primary btn-sm"
+                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                   onClick={() => {
                     setShowPreview(false);
                     handleInitiateAuth();
@@ -278,7 +276,7 @@ const Initiate: React.FC = () => {
                   Send Request
                 </button>
                 <button
-                  className="btn btn-ghost btn-sm"
+                  className="px-3 py-1 text-sm bg-transparent hover:bg-gray-100 rounded transition-colors"
                   onClick={() => setShowPreview(false)}
                 >
                   Close
@@ -286,7 +284,7 @@ const Initiate: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={() => setShowPreview(false)}></div>
+          <div className="absolute inset-0" onClick={() => setShowPreview(false)}></div>
         </div>
       )}
     </div>

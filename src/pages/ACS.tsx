@@ -185,7 +185,7 @@ const ACS: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="loading loading-spinner loading-lg"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -197,13 +197,13 @@ const ACS: React.FC = () => {
           <h1 className="text-2xl font-bold">SAML Response Error</h1>
           <button 
             onClick={() => navigate('/')}
-            className="btn btn-outline btn-sm"
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           >
             Back to List
           </button>
         </div>
         
-        <div className="alert alert-error">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           <span>{error}</span>
         </div>
       </div>
@@ -212,7 +212,7 @@ const ACS: React.FC = () => {
 
   if (!sp) {
     return (
-      <div className="alert alert-error">
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
         <span>Service Provider not found</span>
       </div>
     );
@@ -224,32 +224,32 @@ const ACS: React.FC = () => {
         <h1 className="text-2xl font-bold">SAML Response</h1>
         <button 
           onClick={() => navigate('/')}
-          className="btn btn-outline btn-sm"
+          className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
         >
           Back to List
         </button>
       </div>
 
       {/* SP Info */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title">Service Provider: {sp.id}</h2>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Service Provider: {sp.id}</h2>
           
           <div className="flex gap-2 flex-wrap">
             <button
-              className="btn btn-primary btn-sm"
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
               onClick={() => navigate(`/sp/${spId}/config`)}
             >
               Configure
             </button>
             <button
-              className="btn btn-secondary btn-sm"
+              className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
               onClick={() => navigate(`/sp/${spId}/metadata`)}
             >
               Metadata
             </button>
             <button
-              className="btn btn-accent btn-sm"
+              className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
               onClick={() => navigate(`/sp/${spId}/initiate`)}
             >
               Initiate Auth
@@ -262,7 +262,7 @@ const ACS: React.FC = () => {
       {samlResponse && (
         <div className="space-y-6">
           {/* Status */}
-          <div className={`alert ${samlResponse.status === 'success' ? 'alert-success' : 'alert-error'}`}>
+          <div className={`px-4 py-3 rounded ${samlResponse.status === 'success' ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700'}`}>
             <div>
               <h3 className="font-bold">
                 {samlResponse.status === 'success' ? 'Authentication Successful' : 'Authentication Failed'}
@@ -275,10 +275,10 @@ const ACS: React.FC = () => {
 
           {/* NameID */}
           {samlResponse.nameId && (
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title">NameID</h2>
-                <div className="bg-base-200 p-4 rounded-lg font-mono text-sm">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">NameID</h2>
+                <div className="bg-gray-100 p-4 rounded-lg font-mono text-sm">
                   {samlResponse.nameId}
                 </div>
               </div>
@@ -287,16 +287,16 @@ const ACS: React.FC = () => {
 
           {/* Attributes */}
           {Object.keys(samlResponse.attributes).length > 0 && (
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title">Attributes</h2>
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Attributes</h2>
                 <div className="space-y-2">
                   {Object.entries(samlResponse.attributes).map(([name, values]) => (
-                    <div key={name} className="border-b border-base-300 pb-2">
+                    <div key={name} className="border-b border-gray-300 pb-2">
                       <div className="font-semibold text-sm">{name}</div>
                       <div className="text-sm">
                         {values.map((value, index) => (
-                          <div key={index} className="bg-base-200 p-2 rounded mt-1 font-mono text-xs">
+                          <div key={index} className="bg-gray-100 p-2 rounded mt-1 font-mono text-xs">
                             {value}
                           </div>
                         ))}
@@ -310,10 +310,10 @@ const ACS: React.FC = () => {
 
           {/* Request ID */}
           {samlResponse.requestId && (
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title">Request ID</h2>
-                <div className="bg-base-200 p-4 rounded-lg font-mono text-sm">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Request ID</h2>
+                <div className="bg-gray-100 p-4 rounded-lg font-mono text-sm">
                   {samlResponse.requestId}
                 </div>
               </div>
@@ -322,10 +322,10 @@ const ACS: React.FC = () => {
 
           {/* Relay State */}
           {samlResponse.relayState && (
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h2 className="card-title">Relay State</h2>
-                <div className="bg-base-200 p-4 rounded-lg font-mono text-sm">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Relay State</h2>
+                <div className="bg-gray-100 p-4 rounded-lg font-mono text-sm">
                   {samlResponse.relayState}
                 </div>
               </div>
@@ -333,20 +333,20 @@ const ACS: React.FC = () => {
           )}
 
           {/* Raw XML */}
-          <div className="card bg-base-100 shadow-xl">
-            <div className="card-body">
-              <h2 className="card-title">Raw SAML XML</h2>
-              <div className="form-control">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Raw SAML XML</h2>
+              <div className="space-y-2">
                 <textarea
-                  className="textarea textarea-bordered font-mono text-xs"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs resize-none"
                   rows={15}
                   value={samlResponse.rawXml}
                   readOnly
                 />
               </div>
-              <div className="card-actions justify-end mt-4">
+              <div className="flex justify-end mt-4">
                 <button
-                  className="btn btn-outline btn-sm"
+                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
                   onClick={() => {
                     navigator.clipboard.writeText(samlResponse.rawXml);
                     alert('Raw XML copied to clipboard!');
