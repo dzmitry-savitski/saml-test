@@ -127,7 +127,7 @@ const Home: React.FC = () => {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gray-100 flex flex-col">
+      <div className="min-h-screen flex flex-col">
         {/* Main Content */}
         <main className="flex-1 p-4">
           <div className="max-w-2xl mx-auto space-y-6">

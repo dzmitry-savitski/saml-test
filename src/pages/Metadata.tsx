@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
 import type { ServiceProvider } from '../types/samlConfig';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Metadata: React.FC = () => {
   const { spId } = useParams<{ spId: string }>();
@@ -101,9 +105,9 @@ const Metadata: React.FC = () => {
     if (!metadataXml) return;
     
     navigator.clipboard.writeText(metadataXml).then(() => {
-      alert('Metadata XML copied to clipboard!');
+      toast.success('Metadata XML copied to clipboard!');
     }).catch(() => {
-      alert('Failed to copy to clipboard');
+      toast.error('Failed to copy to clipboard');
     });
   };
 
@@ -125,22 +129,12 @@ const Metadata: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">SP Metadata</h1>
         <div className="flex gap-2">
-          <button 
-            onClick={() => navigate(`/sp/${spId}/initiate`)}
-            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-          >
-            Back to SP
-          </button>
-          <button 
-            onClick={() => navigate('/')}
-            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-          >
-            Back to List
-          </button>
+          <Button variant="outline" onClick={() => navigate('/')}>Back to Home</Button>
+          <Button variant="outline" onClick={() => navigate(`/sp/${spId}/initiate`)}>Back to SP</Button>
         </div>
       </div>
 
@@ -148,44 +142,81 @@ const Metadata: React.FC = () => {
       <div className="bg-white rounded-lg shadow-lg p-6">
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Service Provider: {sp.id}</h2>
-          <div className="text-sm text-gray-600">
-            <p><strong>Entity ID:</strong> {sp.entityId || 'Not configured'}</p>
-            <p>
-              <strong>ACS URL:</strong> {`${window.location.origin}/acs?sp=${spId}`}
-              <button
-                className="px-2 py-1 text-xs bg-transparent hover:bg-gray-100 rounded ml-2 transition-colors"
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/acs?sp=${spId}`);
-                  alert('ACS URL copied to clipboard!');
-                }}
-              >
-                Copy
-              </button>
-            </p>
-            <p><strong>ACS Binding:</strong> POST (fixed)</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Actions</h2>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
-              onClick={handleDownload}
-              disabled={!metadataXml}
-            >
-              Download Metadata
-            </button>
-            <button
-              className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors disabled:opacity-50"
-              onClick={copyToClipboard}
-              disabled={!metadataXml}
-            >
-              Copy to Clipboard
-            </button>
+          
+          {/* Info fields as non-editable inputs with copy icon */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Entity ID</label>
+              <div className="relative">
+                <Input
+                  value={sp.entityId || 'Not configured'}
+                  readOnly
+                  className="pr-10 text-xs"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(sp.entityId || '');
+                    toast.success('Entity ID copied!');
+                  }}
+                  tabIndex={-1}
+                  aria-label="Copy Entity ID"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">ACS URL</label>
+              <div className="relative">
+                <Input
+                  value={`${window.location.origin}/acs?sp=${spId}`}
+                  readOnly
+                  className="pr-10 text-xs"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/acs?sp=${spId}`);
+                    toast.success('ACS URL copied!');
+                  }}
+                  tabIndex={-1}
+                  aria-label="Copy ACS URL"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">ACS Binding</label>
+              <div className="relative">
+                <Input
+                  value="POST (fixed)"
+                  readOnly
+                  className="pr-10 text-xs"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText('POST');
+                    toast.success('ACS Binding copied!');
+                  }}
+                  tabIndex={-1}
+                  aria-label="Copy ACS Binding"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -200,44 +231,32 @@ const Metadata: React.FC = () => {
               <span>Please configure the Entity ID and ACS URL before generating metadata.</span>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-4">
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs h-96 resize-none focus:outline-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs h-96 resize-none focus:outline-none overflow-y-auto"
                 value={metadataXml}
                 readOnly
                 placeholder="Metadata XML will be generated here..."
               />
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleDownload}
+                  disabled={!metadataXml}
+                >
+                  Download Metadata
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={copyToClipboard}
+                  disabled={!metadataXml}
+                >
+                  Copy to Clipboard
+                </Button>
+              </div>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Metadata URL */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Metadata URL</h2>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Share this URL with your Identity Provider:
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:outline-none"
-                value={`${window.location.origin}/sp/${spId}/metadata?download=true`}
-                readOnly
-              />
-              <button
-                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/sp/${spId}/metadata?download=true`);
-                  alert('Metadata URL copied to clipboard!');
-                }}
-              >
-                Copy
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
