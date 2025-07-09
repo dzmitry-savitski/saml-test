@@ -1,6 +1,6 @@
 {
     "name": "saml-test",
-    "compatibility_date": "2025-07-04",
+    "compatibility_date": "2025-06-17",
     "pages_build_output_dir": "./dist",
     "kv_namespaces": [
       {
@@ -8,10 +8,6 @@
         "id": "saml-sessions-kv",
         "preview_id": "saml-sessions-kv-preview"
       }
-    ],
-    "build": {
-        "command": "npm run build",
-        "watch_dir": "./src"
-      }
+    ]
   }
   
