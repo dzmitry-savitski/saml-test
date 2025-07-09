@@ -3,6 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
 import type { ServiceProvider } from '../types/samlConfig';
 import { generateSPCertificates } from '../utils/certificateGenerator';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 const SPConfig: React.FC = () => {
   const { spId } = useParams<{ spId: string }>();
@@ -15,6 +21,7 @@ const SPConfig: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [idpMetadataUrl, setIdpMetadataUrl] = useState('');
   const [isImportingMetadata, setIsImportingMetadata] = useState(false);
+  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
   const hasLoadedData = useRef(false);
 
   // Load SP data on mount
@@ -128,11 +135,10 @@ const SPConfig: React.FC = () => {
       };
       
       updateSP(spId, updatedFormData);
-      // Show success message or redirect
-      alert('Configuration saved successfully!');
+      toast.success('Configuration saved successfully!');
     } catch (error) {
       console.error('Error saving configuration:', error);
-      alert('Error saving configuration');
+      toast.error('Error saving configuration');
     } finally {
       setIsSaving(false);
     }
@@ -188,10 +194,10 @@ const SPConfig: React.FC = () => {
       handleInputChange('idp.rawMetadataXml', xmlText);
       handleInputChange('idp.metadataUrl', idpMetadataUrl);
 
-      alert('IDP metadata imported successfully!');
+      toast.success('IDP metadata imported successfully!');
     } catch (error) {
       console.error('Error importing metadata:', error);
-      alert('Error importing metadata. Please check the URL and try again.');
+      toast.error('Error importing metadata. Please check the URL and try again.');
     } finally {
       setIsImportingMetadata(false);
     }
@@ -200,21 +206,31 @@ const SPConfig: React.FC = () => {
   const regenerateCertificates = () => {
     if (!formData || !spId) return;
     
-    if (confirm('This will generate new certificates and keys. This action cannot be undone. Are you sure you want to continue?')) {
-      try {
-        const certificates = generateSPCertificates(spId);
-        
-        handleInputChange('privateKey', certificates.signing.privateKey);
-        handleInputChange('certificate', certificates.signing.certificate);
-        handleInputChange('encryptionKey', certificates.encryption.privateKey);
-        handleInputChange('encryptionCertificate', certificates.encryption.certificate);
-        
-        alert('Certificates regenerated successfully!');
-      } catch (error) {
-        console.error('Error regenerating certificates:', error);
-        alert('Error regenerating certificates. Please try again.');
-      }
+    setRegenerateDialogOpen(true);
+  };
+
+  const handleRegenerateConfirm = () => {
+    if (!formData || !spId) return;
+    
+    try {
+      const certificates = generateSPCertificates(spId);
+      
+      handleInputChange('privateKey', certificates.signing.privateKey);
+      handleInputChange('certificate', certificates.signing.certificate);
+      handleInputChange('encryptionKey', certificates.encryption.privateKey);
+      handleInputChange('encryptionCertificate', certificates.encryption.certificate);
+      
+      toast.success('Certificates regenerated successfully!');
+    } catch (error) {
+      console.error('Error regenerating certificates:', error);
+      toast.error('Error regenerating certificates. Please try again.');
+    } finally {
+      setRegenerateDialogOpen(false);
     }
+  };
+
+  const handleRegenerateCancel = () => {
+    setRegenerateDialogOpen(false);
   };
 
   if (isLoading) {
@@ -227,32 +243,23 @@ const SPConfig: React.FC = () => {
 
   if (!formData) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        <span>Service Provider not found</span>
-      </div>
+      <Alert variant="destructive" className="max-w-xl mx-auto mt-8">
+        <AlertDescription>Service Provider not found</AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Configure Service Provider</h1>
         <div className="flex gap-2">
-          <button 
-            onClick={() => navigate(`/sp/${spId}/initiate`)}
-            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-          >
-            Back to SP
-          </button>
-          <button 
-            onClick={() => navigate('/')}
-            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-          >
-            Back to List
-          </button>
+          <Button variant="outline" onClick={() => navigate('/')}>Back to Home</Button>
+          <Button variant="outline" onClick={() => navigate(`/sp/${spId}/initiate`)}>Back to SP</Button>
         </div>
       </div>
 
+      {/* Service Provider Configuration */}
       <div className="bg-white rounded-lg shadow-lg p-6">
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Service Provider Configuration</h2>
@@ -263,27 +270,31 @@ const SPConfig: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700">
                 Entity ID *
               </label>
-              <div className="flex gap-2">
-                <input
+              <div className="relative">
+                <Input
                   type="text"
-                  className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.entityId ? 'border-red-500' : 'border-gray-300'}`}
+                  className={errors.entityId ? 'border-red-500' : ''}
                   value={formData.entityId}
                   onChange={(e) => handleInputChange('entityId', e.target.value)}
                   placeholder="https://sp.example.com"
                 />
-                <button
+                <Button
                   type="button"
-                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
                   onClick={() => {
                     if (formData.entityId) {
                       navigator.clipboard.writeText(formData.entityId);
-                      alert('Entity ID copied to clipboard!');
+                      toast.success('Entity ID copied!');
                     }
                   }}
                   disabled={!formData.entityId}
+                  tabIndex={-1}
+                  aria-label="Copy Entity ID"
                 >
-                  Copy
-                </button>
+                  <Copy className="h-4 w-4" />
+                </Button>
               </div>
               {errors.entityId && (
                 <p className="text-sm text-red-600">{errors.entityId}</p>
@@ -317,23 +328,27 @@ const SPConfig: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700">
                 ACS URL
               </label>
-              <div className="flex gap-2">
-                <input
+              <div className="relative">
+                <Input
                   type="url"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
+                  className="bg-gray-100"
                   value={`${window.location.origin}/acs?sp=${spId}`}
                   readOnly
                 />
-                <button
+                <Button
                   type="button"
-                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
                   onClick={() => {
                     navigator.clipboard.writeText(`${window.location.origin}/acs?sp=${spId}`);
-                    alert('ACS URL copied to clipboard!');
+                    toast.success('ACS URL copied!');
                   }}
+                  tabIndex={-1}
+                  aria-label="Copy ACS URL"
                 >
-                  Copy
-                </button>
+                  <Copy className="h-4 w-4" />
+                </Button>
               </div>
               <p className="text-sm text-gray-500">This is the ACS URL to use in your IDP configuration</p>
             </div>
@@ -343,12 +358,28 @@ const SPConfig: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700">
                 ACS Binding
               </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
-                value="POST"
-                readOnly
-              />
+              <div className="relative">
+                <Input
+                  type="text"
+                  className="bg-gray-100"
+                  value="POST"
+                  readOnly
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText('POST');
+                    toast.success('ACS Binding copied!');
+                  }}
+                  tabIndex={-1}
+                  aria-label="Copy ACS Binding"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
               <p className="text-sm text-gray-500">Only POST binding is supported</p>
             </div>
           </div>
@@ -379,23 +410,12 @@ const SPConfig: React.FC = () => {
           <div className="mt-4">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-lg font-semibold">Certificates and Keys</h3>
-              <button
-                className="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
+              <Button
+                variant="outline"
                 onClick={regenerateCertificates}
               >
                 Regenerate Certificates
-              </button>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div>
-                <h4 className="font-bold text-blue-900">Certificate Information</h4>
-                <div className="text-xs text-blue-800 mt-2">
-                  <p>• Signing certificates are used to sign SAML requests and verify responses</p>
-                  <p>• Encryption certificates are used to encrypt SAML assertions</p>
-                  <p>• Certificates are auto-generated when creating a new SP</p>
-                  <p>• Use "Regenerate Certificates" to create new certificates if needed</p>
-                </div>
-              </div>
+              </Button>
             </div>
           </div>
 
@@ -406,7 +426,7 @@ const SPConfig: React.FC = () => {
                 Signing Certificate (PEM) *
               </label>
               <textarea
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none ${errors.certificate ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none text-xs font-mono ${errors.certificate ? 'border-red-500' : 'border-gray-300'}`}
                 value={formData.certificate}
                 onChange={(e) => handleInputChange('certificate', e.target.value)}
                 placeholder="-----BEGIN CERTIFICATE-----..."
@@ -421,7 +441,7 @@ const SPConfig: React.FC = () => {
                 Signing Private Key (PEM) *
               </label>
               <textarea
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none ${errors.privateKey ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none text-xs font-mono ${errors.privateKey ? 'border-red-500' : 'border-gray-300'}`}
                 value={formData.privateKey}
                 onChange={(e) => handleInputChange('privateKey', e.target.value)}
                 placeholder="-----BEGIN PRIVATE KEY-----..."
@@ -439,7 +459,7 @@ const SPConfig: React.FC = () => {
                 Encryption Certificate (PEM)
               </label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none text-xs font-mono"
                 value={formData.encryptionCertificate || ''}
                 onChange={(e) => handleInputChange('encryptionCertificate', e.target.value)}
                 placeholder="-----BEGIN CERTIFICATE-----..."
@@ -451,7 +471,7 @@ const SPConfig: React.FC = () => {
                 Encryption Key (PEM)
               </label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none text-xs font-mono"
                 value={formData.encryptionKey || ''}
                 onChange={(e) => handleInputChange('encryptionKey', e.target.value)}
                 placeholder="-----BEGIN PRIVATE KEY-----..."
@@ -472,20 +492,20 @@ const SPConfig: React.FC = () => {
               Import IDP Metadata
             </label>
             <div className="flex gap-2">
-              <input
+              <Input
                 type="url"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1"
                 value={idpMetadataUrl}
                 onChange={(e) => setIdpMetadataUrl(e.target.value)}
                 placeholder="https://idp.example.com/metadata"
               />
-              <button
-                className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 ${isImportingMetadata ? 'animate-pulse' : ''}`}
+              <Button
                 onClick={importIdpMetadata}
                 disabled={!idpMetadataUrl.trim() || isImportingMetadata}
+                className={isImportingMetadata ? 'animate-pulse' : ''}
               >
                 {isImportingMetadata ? 'Importing...' : 'Import'}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -495,9 +515,9 @@ const SPConfig: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700">
                 IDP Entity ID *
               </label>
-              <input
+              <Input
                 type="text"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['idp.entityId'] ? 'border-red-500' : 'border-gray-300'}`}
+                className={errors['idp.entityId'] ? 'border-red-500' : ''}
                 value={formData.idp.entityId}
                 onChange={(e) => handleInputChange('idp.entityId', e.target.value)}
                 placeholder="https://idp.example.com"
@@ -512,9 +532,9 @@ const SPConfig: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700">
                 SSO URL *
               </label>
-              <input
+              <Input
                 type="url"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['idp.ssoUrl'] ? 'border-red-500' : 'border-gray-300'}`}
+                className={errors['idp.ssoUrl'] ? 'border-red-500' : ''}
                 value={formData.idp.ssoUrl}
                 onChange={(e) => handleInputChange('idp.ssoUrl', e.target.value)}
                 placeholder="https://idp.example.com/sso"
@@ -559,7 +579,7 @@ const SPConfig: React.FC = () => {
               IDP Certificate (PEM) *
             </label>
             <textarea
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none ${errors['idp.certificate'] ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none text-xs font-mono ${errors['idp.certificate'] ? 'border-red-500' : 'border-gray-300'}`}
               value={formData.idp.certificate}
               onChange={(e) => handleInputChange('idp.certificate', e.target.value)}
               placeholder="-----BEGIN CERTIFICATE-----..."
@@ -575,9 +595,8 @@ const SPConfig: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700">
                 SLO URL
               </label>
-              <input
+              <Input
                 type="url"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.idp.sloUrl || ''}
                 onChange={(e) => handleInputChange('idp.sloUrl', e.target.value)}
                 placeholder="https://idp.example.com/slo"
@@ -603,20 +622,35 @@ const SPConfig: React.FC = () => {
 
       {/* Save Button */}
       <div className="flex justify-end gap-2">
-        <button
+        <Button
+          variant="outline"
           onClick={() => navigate('/')}
-          className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={handleSave}
-          className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 ${isSaving ? 'animate-pulse' : ''}`}
           disabled={isSaving}
+          className={isSaving ? 'animate-pulse' : ''}
         >
           {isSaving ? 'Saving...' : 'Save Configuration'}
-        </button>
+        </Button>
       </div>
+
+      <Dialog open={regenerateDialogOpen} onOpenChange={setRegenerateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Certificate Regeneration</DialogTitle>
+            <DialogDescription>
+              This will generate new certificates and keys. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleRegenerateCancel}>Cancel</Button>
+            <Button onClick={handleRegenerateConfirm}>Regenerate</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
