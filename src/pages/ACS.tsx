@@ -333,7 +333,7 @@ const ACS: React.FC = () => {
                 )}
                 
                 {/* Show signature details for both response and assertion */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2 text-sm">
                   <div>
                     <span className="font-medium">Response Signed:</span>
                     <span className="ml-2">{samlResponse.validation.responseSigned ? 'Yes' : 'No'}</span>
