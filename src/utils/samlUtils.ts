@@ -88,10 +88,10 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string): st
     digest.update(canonicalizedXml, 'utf8');
     const digestValue = forge.util.encode64(digest.digest().getBytes());
     
-    // Insert signature into the XML
+    // Insert signature into the XML - place it as a child element after the opening tag
     const signedRequest = canonicalizedXml.replace(
-      '<samlp:AuthnRequest',
-      `<samlp:AuthnRequest
+      '>',
+      `>
   <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
     <ds:SignedInfo>
       <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
