@@ -93,7 +93,7 @@ const ACS: React.FC = () => {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/&lt;(\/?)([^>]*?)&gt;/g, (match, slash, content) => {
+        .replace(/&lt;(\/?)([^>]*?)&gt;/g, (_, slash, content) => {
           const isClosing = slash === '/';
           const isSelfClosing = content.endsWith('/');
           const tagName = content.split(' ')[0];
