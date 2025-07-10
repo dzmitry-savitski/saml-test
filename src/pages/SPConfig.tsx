@@ -152,7 +152,7 @@ const SPConfig: React.FC = () => {
 
     setIsImportingMetadata(true);
     try {
-      const response = await fetch(idpMetadataUrl);
+      const response = await fetch(idpMetadataUrl, { mode: 'no-cors' });
       if (!response.ok) {
         throw new Error('Failed to fetch metadata');
       }
