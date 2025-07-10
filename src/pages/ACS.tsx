@@ -38,6 +38,7 @@ const ACS: React.FC = () => {
   const [samlResponse, setSamlResponse] = useState<SAMLResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasProcessedResponse, setHasProcessedResponse] = useState(false);
+  const [showFormattedXml, setShowFormattedXml] = useState(false);
 
     // Load SP data and process SAML response on mount
   useEffect(() => {
@@ -78,6 +79,42 @@ const ACS: React.FC = () => {
   }, [spId, spList, hasProcessedResponse]);
 
 
+
+  const formatXml = (xml: string): string => {
+    try {
+      // Parse and format XML
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xml, 'text/xml');
+      const serializer = new XMLSerializer();
+      const formatted = serializer.serializeToString(xmlDoc);
+      
+      // Add syntax highlighting
+      return formatted
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/&lt;(\/?)([^>]*?)&gt;/g, (match, slash, content) => {
+          const isClosing = slash === '/';
+          const isSelfClosing = content.endsWith('/');
+          const tagName = content.split(' ')[0];
+          
+          let color = '#0066cc'; // default blue for tags
+          if (isClosing) color = '#cc0066'; // red for closing tags
+          if (isSelfClosing) color = '#666666'; // gray for self-closing tags
+          if (tagName.startsWith('saml:')) color = '#006600'; // green for SAML elements
+          if (tagName.startsWith('samlp:')) color = '#660066'; // purple for SAML protocol elements
+          if (tagName.startsWith('ds:')) color = '#cc6600'; // orange for signature elements
+          if (tagName.startsWith('md:')) color = '#006666'; // teal for metadata elements
+          
+          return `<span style="color: ${color}">&lt;${slash}${content}&gt;</span>`;
+        })
+        .replace(/&amp;([^;]+);/g, '<span style="color: #666666">&amp;$1;</span>') // entities
+        .replace(/([a-zA-Z-]+)=&quot;([^&]*?)&quot;/g, '<span style="color: #cc0066">$1</span>=<span style="color: #006600">&quot;$2&quot;</span>'); // attributes
+    } catch (error) {
+      console.error('Error formatting XML:', error);
+      return xml; // fallback to original XML
+    }
+  };
 
   const fetchSamlDataFromSessionStorage = (responseId: string, sp: ServiceProvider, urlSpId: string) => {
     try {
@@ -240,61 +277,6 @@ const ACS: React.FC = () => {
           {/* SAML Response Details */}
           <SectionCard>
             <div className="space-y-6">
-              {/* Signature Validation */}
-              {samlResponse.validation && (
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Signature Validation</h3>
-                  <div className={`p-4 rounded-lg ${samlResponse.validation.isValid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-3 h-3 rounded-full ${samlResponse.validation.isValid ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                        <span className="font-medium">
-                          {samlResponse.validation.isValid ? 'Validation Passed' : 'Validation Failed'}
-                        </span>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium">Response Signed:</span>
-                          <span className={`ml-2 ${samlResponse.validation.responseSigned ? 'text-green-600' : 'text-gray-500'}`}>
-                            {samlResponse.validation.responseSigned ? 'Yes' : 'No'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Response Valid:</span>
-                          <span className={`ml-2 ${samlResponse.validation.responseSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
-                            {samlResponse.validation.responseSignatureValid ? 'Yes' : 'No'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Assertion Signed:</span>
-                          <span className={`ml-2 ${samlResponse.validation.assertionSigned ? 'text-green-600' : 'text-gray-500'}`}>
-                            {samlResponse.validation.assertionSigned ? 'Yes' : 'No'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Assertion Valid:</span>
-                          <span className={`ml-2 ${samlResponse.validation.assertionSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
-                            {samlResponse.validation.assertionSignatureValid ? 'Yes' : 'No'}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {samlResponse.validation.errors.length > 0 && (
-                        <div className="mt-2">
-                          <span className="font-medium text-red-600">Errors:</span>
-                          <ul className="list-disc list-inside text-red-600 text-sm mt-1">
-                            {samlResponse.validation.errors.map((error, index) => (
-                              <li key={index}>{error}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* NameID */}
               {samlResponse.nameId && (
                 <div className="space-y-2">
@@ -348,19 +330,112 @@ const ACS: React.FC = () => {
             </div>
           </SectionCard>
 
+          {/* Signature Validation */}
+          {samlResponse.validation && (
+            <SectionCard>
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Signature Validation</h2>
+                <div className={`p-4 rounded-lg ${samlResponse.validation.isValid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${samlResponse.validation.isValid ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <span className="font-medium">
+                        {samlResponse.validation.isValid ? 'Validation Passed' : 'Validation Failed'}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium">Response Signed:</span>
+                        <span className={`ml-2 ${samlResponse.validation.responseSigned ? 'text-green-600' : 'text-gray-500'}`}>
+                          {samlResponse.validation.responseSigned ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Response Valid:</span>
+                        <span className={`ml-2 ${samlResponse.validation.responseSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
+                          {samlResponse.validation.responseSignatureValid ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Assertion Signed:</span>
+                        <span className={`ml-2 ${samlResponse.validation.assertionSigned ? 'text-green-600' : 'text-gray-500'}`}>
+                          {samlResponse.validation.assertionSigned ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Assertion Valid:</span>
+                        <span className={`ml-2 ${samlResponse.validation.assertionSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
+                          {samlResponse.validation.assertionSignatureValid ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {samlResponse.validation.errors.length > 0 && (
+                      <div className="mt-2">
+                        <span className="font-medium text-red-600">Errors:</span>
+                        <ul className="list-disc list-inside text-red-600 text-sm mt-1">
+                          {samlResponse.validation.errors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+          )}
+
           {/* Raw XML */}
           <SectionCard>
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Raw SAML Response XML</h2>
-              <div className="space-y-2">
-                <textarea
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs resize-none overflow-y-auto"
-                  rows={15}
-                  value={samlResponse.rawXml}
-                  readOnly
-                  style={{ maxHeight: '400px' }}
-                />
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Raw SAML Response XML</h2>
+                <div className="flex gap-2">
+                  <Button
+                    variant={showFormattedXml ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowFormattedXml(false)}
+                  >
+                    Raw
+                  </Button>
+                  <Button
+                    variant={showFormattedXml ? "outline" : "default"}
+                    size="sm"
+                    onClick={() => setShowFormattedXml(true)}
+                  >
+                    Formatted
+                  </Button>
+                </div>
               </div>
+              
+              {showFormattedXml ? (
+                <div className="space-y-2">
+                  <div 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs overflow-y-auto bg-gray-50"
+                    style={{ 
+                      maxHeight: '400px',
+                      whiteSpace: 'pre-wrap',
+                      lineHeight: '1.4'
+                    }}
+                    dangerouslySetInnerHTML={{ 
+                      __html: formatXml(samlResponse.rawXml) 
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <textarea
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs resize-none overflow-y-auto"
+                    rows={15}
+                    value={samlResponse.rawXml}
+                    readOnly
+                    style={{ maxHeight: '400px' }}
+                  />
+                </div>
+              )}
+              
               <div className="flex justify-end mt-4">
                 <Button
                   variant="outline"

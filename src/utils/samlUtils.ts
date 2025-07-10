@@ -239,8 +239,8 @@ export function validateResponseSignature(xmlDoc: Document, idpCertificate: stri
       return false;
     }
 
-    // Check if Response is signed
-    const signatureElement = responseElement.querySelector('ds\\:Signature, Signature');
+    // Check if Response is signed - look for signature as direct child of response
+    const signatureElement = responseElement.querySelector(':scope > ds\\:Signature, :scope > Signature');
     if (!signatureElement) {
       console.warn('Response is not signed');
       return false;
@@ -302,8 +302,8 @@ export function validateAssertionSignature(xmlDoc: Document, idpCertificate: str
       return false;
     }
 
-    // Check if Assertion is signed
-    const signatureElement = assertionElement.querySelector('ds\\:Signature, Signature');
+    // Check if Assertion is signed - look for signature as direct child of assertion
+    const signatureElement = assertionElement.querySelector(':scope > ds\\:Signature, :scope > Signature');
     if (!signatureElement) {
       console.warn('Assertion is not signed');
       return false;
@@ -383,7 +383,8 @@ export function validateSAMLResponse(xmlDoc: Document, sp: ServiceProvider): {
     // Validate response signature if present
     const responseElement = xmlDoc.querySelector('samlp\\:Response, Response');
     if (responseElement) {
-      const responseSignature = responseElement.querySelector('ds\\:Signature, Signature');
+      // Check for signature as direct child of response (not nested in assertion)
+      const responseSignature = responseElement.querySelector(':scope > ds\\:Signature, :scope > Signature');
       if (responseSignature) {
         result.responseSigned = true;
         result.responseSignatureValid = validateResponseSignature(xmlDoc, sp.idp.certificate);
@@ -397,7 +398,8 @@ export function validateSAMLResponse(xmlDoc: Document, sp: ServiceProvider): {
     // Validate assertion signature if present
     const assertionElement = xmlDoc.querySelector('saml\\:Assertion, Assertion');
     if (assertionElement) {
-      const assertionSignature = assertionElement.querySelector('ds\\:Signature, Signature');
+      // Check for signature as direct child of assertion
+      const assertionSignature = assertionElement.querySelector(':scope > ds\\:Signature, :scope > Signature');
       if (assertionSignature) {
         result.assertionSigned = true;
         result.assertionSignatureValid = validateAssertionSignature(xmlDoc, sp.idp.certificate);
