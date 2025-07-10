@@ -1,5 +1,4 @@
 // In-memory storage for SAML sessions
-const samlSessions = new Map();
 
 export async function onRequestPost(context) {
   const { request } = context;
@@ -64,14 +63,4 @@ export async function onRequestPost(context) {
 export async function onRequestGet(context) {
   // Handle GET requests by serving the static site
   return context.next();
-}
-
-// Clean up expired sessions
-function cleanupExpiredSessions() {
-  const now = Date.now();
-  for (const [responseId, sessionData] of samlSessions.entries()) {
-    if (sessionData.expiresAt < now) {
-      samlSessions.delete(responseId);
-    }
-  }
 } 
