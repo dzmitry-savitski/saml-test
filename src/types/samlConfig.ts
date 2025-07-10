@@ -27,7 +27,6 @@ export interface ServiceProvider {
   encryptionKey?: string; // Encryption key (PEM, optional)
   encryptionCertificate?: string; // Encryption certificate (PEM, optional)
   signAuthnRequest: boolean;
-  allowCreate: boolean;
   nameIdFormat: string;
   idp: IdentityProviderConfig; // Nested IDP config
 } 

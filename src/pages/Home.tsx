@@ -27,7 +27,6 @@ const emptySP = (name: string): ServiceProvider => {
     encryptionKey: certificates.encryption.privateKey,
     encryptionCertificate: certificates.encryption.certificate,
     signAuthnRequest: false,
-    allowCreate: false,
     nameIdFormat: 'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified',
     idp: {
       entityId: '',

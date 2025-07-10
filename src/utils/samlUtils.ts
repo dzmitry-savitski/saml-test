@@ -41,7 +41,7 @@ export function clearStoredRequestId(spId: string): void {
 /**
  * Creates a SAML AuthnRequest XML
  */
-export function createAuthnRequest(sp: ServiceProvider, forceAuthn: boolean = false): string {
+export function createAuthnRequest(sp: ServiceProvider, forceAuthn: boolean = false, allowCreate: boolean = true): string {
   const requestId = generateRequestId();
   const issueInstant = new Date().toISOString();
   
@@ -56,11 +56,11 @@ export function createAuthnRequest(sp: ServiceProvider, forceAuthn: boolean = fa
                     AssertionConsumerServiceURL="${sp.acsUrl}"
                     Destination="${sp.idp.ssoUrl}"
                     ${forceAuthn ? 'ForceAuthn="true"' : ''}
-                    ${sp.allowCreate ? 'IsPassive="false"' : ''}>
+                    ${allowCreate ? 'IsPassive="false"' : ''}>
   <saml:Issuer>${sp.entityId}</saml:Issuer>
   <samlp:NameIDPolicy
     Format="${sp.nameIdFormat}"
-    ${sp.allowCreate ? 'AllowCreate="true"' : 'AllowCreate="false"'}/>
+    ${allowCreate ? 'AllowCreate="true"' : 'AllowCreate="false"'}/>
 </samlp:AuthnRequest>`;
 
   return samlRequest;
@@ -167,10 +167,10 @@ export function base64EncodeSamlRequest(samlRequest: string): string {
 /**
  * Initiates SAML authentication by redirecting to IDP
  */
-export function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = false, relayState?: string): void {
+export function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = false, allowCreate: boolean = true, relayState?: string): void {
   try {
     // Generate the SAML request
-    let samlRequest = createAuthnRequest(sp, forceAuthn);
+    let samlRequest = createAuthnRequest(sp, forceAuthn, allowCreate);
     
     // Sign the request if required
     if (sp.signAuthnRequest && sp.privateKey) {

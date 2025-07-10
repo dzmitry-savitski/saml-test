@@ -154,7 +154,7 @@ const Metadata: React.FC = () => {
               readOnly
             />
             <CopyInput
-              value="POST (fixed)"
+              value="POST"
               label="ACS Binding"
               readOnly
               copyValue="POST"

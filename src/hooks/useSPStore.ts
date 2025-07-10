@@ -18,15 +18,20 @@ export function useSPStore() {
       try {
         const parsed: ServiceProvider[] = JSON.parse(stored);
         
-        // Migrate existing SPs to include name field if missing
+        // Migrate existing SPs to include name field if missing and remove allowCreate
         const migrated = parsed.map(sp => {
-          if (!sp.name) {
+          // Remove allowCreate if it exists (for backward compatibility)
+          const spWithoutAllowCreate = (() => {
+            const { allowCreate, ...rest } = sp as ServiceProvider & { allowCreate?: boolean };
+            return rest;
+          })();
+          if (!spWithoutAllowCreate.name) {
             return {
-              ...sp,
-              name: sp.id // Use ID as name for existing SPs
+              ...spWithoutAllowCreate,
+              name: spWithoutAllowCreate.id // Use ID as name for existing SPs
             };
           }
-          return sp;
+          return spWithoutAllowCreate;
         });
         
         setSpList(migrated);

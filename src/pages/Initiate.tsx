@@ -20,6 +20,7 @@ const Initiate: React.FC = () => {
   const [sp, setSp] = useState<ServiceProvider | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [forceAuthn, setForceAuthn] = useState(false);
+  const [allowCreate, setAllowCreate] = useState(true);
   const [relayState, setRelayState] = useState(() => {
     const random = Math.random().toString(36).substring(2, 10);
     return `relaystate-random-${random}`;
@@ -52,7 +53,7 @@ const Initiate: React.FC = () => {
   const handlePreviewRequest = () => {
     if (!sp) return;
     try {
-      let samlRequest = createAuthnRequest(sp, forceAuthn);
+      let samlRequest = createAuthnRequest(sp, forceAuthn, allowCreate);
       if (sp.signAuthnRequest && sp.privateKey) {
         samlRequest = signAuthnRequest(samlRequest, sp.privateKey);
       }
@@ -73,7 +74,7 @@ const Initiate: React.FC = () => {
     if (!sp) return;
     setIsInitiating(true);
     try {
-      initiateSamlAuth(sp, forceAuthn, relayState);
+      initiateSamlAuth(sp, forceAuthn, allowCreate, relayState);
     } catch (error) {
       alert(`Failed to initiate SAML authentication: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsInitiating(false);
@@ -240,6 +241,15 @@ const Initiate: React.FC = () => {
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                 checked={forceAuthn}
                 onChange={(e) => setForceAuthn(e.target.checked)}
+              />
+            </label>
+            <label className="flex items-center cursor-pointer">
+              <span className="mr-2 text-sm font-medium text-gray-700">Allow Create</span>
+              <input
+                type="checkbox"
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                checked={allowCreate}
+                onChange={(e) => setAllowCreate(e.target.checked)}
               />
             </label>
           </div>

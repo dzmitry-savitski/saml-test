@@ -447,15 +447,6 @@ const SPConfig: React.FC = () => {
                 onChange={(e) => handleInputChange('signAuthnRequest', e.target.checked)}
               />
             </label>
-            <label className="flex items-center cursor-pointer">
-              <span className="mr-2 text-sm font-medium text-gray-700">Allow Create</span>
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                checked={formData.allowCreate}
-                onChange={(e) => handleInputChange('allowCreate', e.target.checked)}
-              />
-            </label>
           </div>
 
           {/* Certificate Management */}
