@@ -121,8 +121,8 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string): st
  * Encodes SAML request for transmission (base64 + deflate)
  */
 export function encodeSamlRequest(samlRequest: string): string {
-  // First compress the XML using deflate
-  const compressed = pako.deflate(samlRequest, { level: 9 });
+  // First compress the XML using raw deflate (no zlib headers)
+  const compressed = pako.deflate(samlRequest, { level: 9, raw: true });
   // Then encode to base64
   return btoa(String.fromCharCode(...compressed));
 }
