@@ -35,6 +35,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
           language={language}
           style={oneLight}
           showLineNumbers={showLineNumbers}
+          wrapLines={true}
           customStyle={{
             margin: 0,
             fontSize: '12px',
@@ -42,9 +43,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
             padding: '16px',
             background: 'transparent',
             maxHeight: maxHeight,
-            overflowY: 'auto',
-            wordWrap: 'break-word',
-            whiteSpace: 'pre-wrap'
+            overflowY: 'auto'
           }}
           lineNumberStyle={{
             color: '#6b7280',
