@@ -58,7 +58,7 @@ const Initiate: React.FC = () => {
         samlRequest = signAuthnRequest(samlRequest, sp.privateKey);
       }
       let encodedRequest: string;
-      if (sp.idp.singleSignOnBinding === 'GET') {
+      if (sp.idp.singleSignOnBinding === 'HTTP-Redirect') {
         encodedRequest = encodeSamlRequest(samlRequest);
       } else {
         encodedRequest = base64EncodeSamlRequest(samlRequest);
