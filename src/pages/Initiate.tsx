@@ -106,6 +106,32 @@ const Initiate: React.FC = () => {
       {/* Test Authentication Section */}
       <SectionCard>
         <div className="space-y-4">
+          {/* SP ID (read-only) */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Service Provider ID</label>
+            <div className="relative">
+              <Input
+                value={sp.id}
+                readOnly
+                className="pr-10 text-xs font-mono bg-gray-100"
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                onClick={() => {
+                  navigator.clipboard.writeText(sp.id);
+                  toast.success('SP ID copied!');
+                }}
+                tabIndex={-1}
+                aria-label="Copy SP ID"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
           {/* Info fields as non-editable inputs with copy icon */}
           <div className="space-y-4">
             <div>
@@ -127,6 +153,30 @@ const Initiate: React.FC = () => {
                   }}
                   tabIndex={-1}
                   aria-label="Copy Entity ID"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">ACS URL</label>
+              <div className="relative">
+                <Input
+                  value={sp.acsUrl || 'Not configured'}
+                  readOnly
+                  className="pr-10 text-xs"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(sp.acsUrl || '');
+                    toast.success('ACS URL copied!');
+                  }}
+                  tabIndex={-1}
+                  aria-label="Copy ACS URL"
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -266,7 +316,7 @@ const Initiate: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Delete Service Provider</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{sp?.id}"? This action cannot be undone.
+              Are you sure you want to delete "{sp?.name}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

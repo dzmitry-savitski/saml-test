@@ -139,7 +139,7 @@ const Metadata: React.FC = () => {
       {/* SP Info */}
       <SectionCard>
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Service Provider: {sp.id}</h2>
+          <h2 className="text-xl font-semibold">Service Provider: {sp.name}</h2>
           
           {/* Info fields as non-editable inputs with copy icon */}
           <div className="space-y-4">

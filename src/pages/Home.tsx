@@ -9,12 +9,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../com
 import { Edit, Trash2 } from 'lucide-react';
 import { SectionCard } from '../components/ui/SectionCard';
 
-const emptySP = (id: string): ServiceProvider => {
+const emptySP = (name: string): ServiceProvider => {
+  const id = crypto.randomUUID();
   // Generate certificates for the new SP
   const certificates = generateSPCertificates(id);
   
   return {
     id,
+    name,
     entityId: id,
     acsUrl: `${window.location.origin}/acs?sp=${id}`,
     spAcsBinding: 'POST' as const,
@@ -43,32 +45,26 @@ const emptySP = (id: string): ServiceProvider => {
   };
 };
 
-const idPattern = /^[a-zA-Z0-9-]+$/;
-
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { spList, addSP, setSpList, deleteSP } = useSPStore();
-  const [newId, setNewId] = useState('');
+  const [newName, setNewName] = useState('');
   const [error, setError] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [spToDelete, setSpToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = () => {
-    if (!newId.trim()) {
-      setError('ID is required.');
+    if (!newName.trim() || !/\S/.test(newName)) {
+      setError('Name is required and must contain at least one non-whitespace character.');
       return;
     }
-    if (!idPattern.test(newId)) {
-      setError('ID can only contain letters, numbers, and hyphens.');
+    if (spList.some(sp => sp.name === newName)) {
+      setError('Name already exists. Please choose a unique name.');
       return;
     }
-    if (spList.some(sp => sp.id === newId)) {
-      setError('ID already exists. Please choose a unique ID.');
-      return;
-    }
-    addSP(emptySP(newId));
-    setNewId('');
+    addSP(emptySP(newName));
+    setNewName('');
     setError('');
   };
 
@@ -99,7 +95,7 @@ const Home: React.FC = () => {
         // Optionally: validate each item is a ServiceProvider
         setSpList(parsed);
         setError('');
-      } catch (err) {
+      } catch {
         setError('Failed to import: Invalid or malformed JSON.');
       }
     };
@@ -139,9 +135,9 @@ const Home: React.FC = () => {
                 <input
                   className="border px-2 py-1 rounded flex-1"
                   type="text"
-                  placeholder="SP ID (letters, numbers, hyphens)"
-                  value={newId}
-                  onChange={e => setNewId(e.target.value)}
+                  placeholder="SP Name (required)"
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
                 />
                 <Button variant="default" onClick={handleAdd}>Add SP</Button>
               </div>
@@ -152,10 +148,10 @@ const Home: React.FC = () => {
                   <li key={sp.id} className="flex items-center justify-between border p-2 rounded hover:bg-gray-50">
                     <Button
                       variant="ghost"
-                      className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded hover:bg-gray-200 cursor-pointer"
+                      className="text-sm bg-gray-100 px-2 py-0.5 rounded hover:bg-gray-200 cursor-pointer"
                       onClick={() => navigate(`/sp/${sp.id}/initiate`)}
                     >
-                      {sp.id}
+                      {sp.name}
                     </Button>
                     <div className="flex gap-2">
                       <Tooltip>
@@ -218,7 +214,7 @@ const Home: React.FC = () => {
             <DialogHeader>
               <DialogTitle>Delete Service Provider</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete "{spToDelete}"? This action cannot be undone.
+                Are you sure you want to delete "{spList.find(sp => sp.id === spToDelete)?.name || spToDelete}"? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

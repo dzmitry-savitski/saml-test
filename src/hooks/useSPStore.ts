@@ -17,8 +17,20 @@ export function useSPStore() {
     if (stored) {
       try {
         const parsed: ServiceProvider[] = JSON.parse(stored);
-        setSpList(parsed);
-      } catch (e) {
+        
+        // Migrate existing SPs to include name field if missing
+        const migrated = parsed.map(sp => {
+          if (!sp.name) {
+            return {
+              ...sp,
+              name: sp.id // Use ID as name for existing SPs
+            };
+          }
+          return sp;
+        });
+        
+        setSpList(migrated);
+      } catch {
         // Ignore parse errors, start fresh
         setSpList([]);
       }

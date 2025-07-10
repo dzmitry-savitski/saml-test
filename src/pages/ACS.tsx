@@ -204,7 +204,7 @@ const ACS: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <PageHeader title={`SP: ${sp.id}`}>
+      <PageHeader title={`SP: ${sp.name}`}>
         <BackButtons spId={spId} />
       </PageHeader>
 

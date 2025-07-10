@@ -15,7 +15,8 @@ export interface IdentityProviderConfig {
 
 // Service Provider (SP) entity, which holds both SP and IDP config
 export interface ServiceProvider {
-  id: string; // unique, for routing and display
+  id: string; // auto-generated UUID, unique identifier
+  name: string; // user-friendly name for display
   entityId: string; // SP Entity ID
   acsUrl: string; // Assertion Consumer Service URL
   spAcsBinding: 'POST' | 'GET'; // ACS binding

@@ -54,7 +54,7 @@ const SPConfig: React.FC = () => {
     setIsLoading(false);
   }, [spId, spList, navigate]);
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     if (!formData) return;
 
     setFormData(prev => {
@@ -93,6 +93,9 @@ const SPConfig: React.FC = () => {
     const newErrors: Record<string, string> = {};
 
     // SP validation
+    if (!formData.name?.trim()) {
+      newErrors.name = 'Service Provider Name is required';
+    }
     if (!formData.entityId?.trim()) {
       newErrors.entityId = 'Entity ID is required';
     }
@@ -152,7 +155,7 @@ const SPConfig: React.FC = () => {
 
     setIsImportingMetadata(true);
     try {
-      const response = await fetch(idpMetadataUrl, { mode: 'no-cors' });
+      const response = await fetch(idpMetadataUrl);
       if (!response.ok) {
         throw new Error('Failed to fetch metadata');
       }
@@ -262,6 +265,56 @@ const SPConfig: React.FC = () => {
       <SectionCard>
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Service Provider Configuration</h2>
+          
+          {/* SP ID and Name */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* SP ID (read-only) */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Service Provider ID
+              </label>
+              <div className="relative">
+                <Input
+                  type="text"
+                  className="bg-gray-100 font-mono text-xs"
+                  value={formData.id}
+                  readOnly
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(formData.id);
+                    toast.success('SP ID copied!');
+                  }}
+                  tabIndex={-1}
+                  aria-label="Copy SP ID"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-gray-500">Auto-generated unique identifier</p>
+            </div>
+
+            {/* SP Name */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Service Provider Name *
+              </label>
+              <Input
+                type="text"
+                className={errors.name ? 'border-red-500' : ''}
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="My Service Provider"
+              />
+              {errors.name && (
+                <p className="text-sm text-red-600">{errors.name}</p>
+              )}
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Entity ID */}
