@@ -384,7 +384,6 @@ const ACS: React.FC = () => {
                 language="xml"
                 showLineNumbers={true}
                 maxHeight="400px"
-                copyButtonText={`Copy ${showFormattedXml ? 'Formatted' : 'Raw'} XML`}
               />
             </div>
           </SectionCard>

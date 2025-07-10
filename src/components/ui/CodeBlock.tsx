@@ -11,7 +11,6 @@ interface CodeBlockProps {
   showLineNumbers?: boolean;
   maxHeight?: string;
   className?: string;
-  copyButtonText?: string;
 }
 
 export const CodeBlock: React.FC<CodeBlockProps> = ({
@@ -19,8 +18,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   language = 'xml',
   showLineNumbers = true,
   maxHeight = '400px',
-  className = '',
-  copyButtonText = 'Copy'
+  className = ''
 }) => {
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -28,19 +26,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   };
 
   return (
-    <div className={`relative ${className}`}>
-      <div className="absolute top-2 right-2 z-10">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleCopy}
-          className="h-7 px-2 text-xs"
-        >
-          <Copy className="h-3 w-3 mr-1" />
-          {copyButtonText}
-        </Button>
-      </div>
-      
+    <div className={`space-y-3 ${className}`}>
       <div 
         className="rounded-md border overflow-hidden"
         style={{ maxHeight }}
@@ -55,7 +41,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
             lineHeight: '1.4',
             padding: '16px',
             background: 'transparent',
-            maxHeight: 'none',
+            maxHeight: maxHeight,
             overflowY: 'auto',
             wordWrap: 'break-word',
             whiteSpace: 'pre-wrap'
@@ -68,6 +54,17 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
         >
           {code}
         </SyntaxHighlighter>
+      </div>
+      
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopy}
+        >
+          <Copy className="h-4 w-4 mr-2" />
+          Copy to Clipboard
+        </Button>
       </div>
     </div>
   );
