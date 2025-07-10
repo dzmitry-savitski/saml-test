@@ -55,7 +55,10 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
             lineHeight: '1.4',
             padding: '16px',
             background: 'transparent',
-            maxHeight: 'none'
+            maxHeight: 'none',
+            overflowY: 'auto',
+            wordWrap: 'break-word',
+            whiteSpace: 'pre-wrap'
           }}
           lineNumberStyle={{
             color: '#6b7280',
