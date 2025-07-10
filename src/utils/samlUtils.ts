@@ -127,10 +127,18 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
     const digestValueElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:DigestValue');
     digestValueElement.textContent = digestValue;
     
-    const signatureValueElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:SignatureValue');
-    signatureValueElement.textContent = signatureValue;
+    // Build the signature structure
+    transforms.appendChild(transform1);
+    transforms.appendChild(transform2);
+    reference.appendChild(transforms);
+    reference.appendChild(digestMethod);
+    reference.appendChild(digestValueElement);
+    signedInfo.appendChild(canonicalizationMethod);
+    signedInfo.appendChild(signatureMethod);
+    signedInfo.appendChild(reference);
+    signatureElement.appendChild(signedInfo);
     
-    // Add KeyInfo with certificate if provided
+    // Add KeyInfo with certificate if provided (before SignatureValue)
     if (certificatePem) {
       const keyInfo = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:KeyInfo');
       const x509Data = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:X509Data');
@@ -148,16 +156,8 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
       signatureElement.appendChild(keyInfo);
     }
     
-    // Build the signature structure
-    transforms.appendChild(transform1);
-    transforms.appendChild(transform2);
-    reference.appendChild(transforms);
-    reference.appendChild(digestMethod);
-    reference.appendChild(digestValueElement);
-    signedInfo.appendChild(canonicalizationMethod);
-    signedInfo.appendChild(signatureMethod);
-    signedInfo.appendChild(reference);
-    signatureElement.appendChild(signedInfo);
+    const signatureValueElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:SignatureValue');
+    signatureValueElement.textContent = signatureValue;
     signatureElement.appendChild(signatureValueElement);
     
     // Insert signature after Issuer but before NameIDPolicy
