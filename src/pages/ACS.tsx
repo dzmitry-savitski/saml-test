@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
 import { getStoredRequestId, clearStoredRequestId, decodeSamlResponse, validateSAMLResponse } from '../utils/samlUtils';
-import { formatXml, removeXmlHighlighting } from '../utils/xmlUtils';
+import { formatXml } from '../utils/xmlUtils';
+import { CodeBlock } from '../components/ui/CodeBlock';
 import type { ServiceProvider } from '../types/samlConfig';
 import { Button } from '../components/ui/button';
 import { PageHeader } from '../components/ui/PageHeader';
 import { BackButtons } from '../components/ui/BackButtons';
 import { SectionCard } from '../components/ui/SectionCard';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { toast } from 'sonner';
+
 
 interface SAMLResponse {
   nameId?: string;
@@ -41,6 +42,7 @@ const ACS: React.FC = () => {
   const [hasProcessedResponse, setHasProcessedResponse] = useState(false);
   const [showFormattedXml, setShowFormattedXml] = useState(true);
   const [formattedXml, setFormattedXml] = useState<string>('');
+  const [rawXml, setRawXml] = useState<string>('');
 
     // Load SP data and process SAML response on mount
   useEffect(() => {
@@ -172,6 +174,7 @@ const ACS: React.FC = () => {
       // Format the XML for display
       const formatted = formatXml(xmlResponse);
       setFormattedXml(formatted);
+      setRawXml(xmlResponse);
       
       setSamlResponse({
         nameId,
@@ -376,46 +379,13 @@ const ACS: React.FC = () => {
                 </div>
               </div>
               
-              {showFormattedXml ? (
-                <div className="space-y-2">
-                  <div 
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs overflow-y-auto bg-gray-50"
-                    style={{ 
-                      maxHeight: '400px',
-                      whiteSpace: 'pre-wrap',
-                      lineHeight: '1.4'
-                    }}
-                    dangerouslySetInnerHTML={{ 
-                      __html: formattedXml 
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs resize-none overflow-y-auto"
-                    rows={15}
-                    value={samlResponse.rawXml}
-                    readOnly
-                    style={{ maxHeight: '400px' }}
-                  />
-                </div>
-              )}
-              
-              <div className="flex justify-end mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const textToCopy = showFormattedXml ? 
-                      removeXmlHighlighting(formattedXml) : 
-                      samlResponse.rawXml;
-                    navigator.clipboard.writeText(textToCopy);
-                    toast.success(`${showFormattedXml ? 'Formatted' : 'Raw'} XML copied to clipboard!`);
-                  }}
-                >
-                  Copy {showFormattedXml ? 'Formatted' : 'Raw'} XML
-                </Button>
-              </div>
+              <CodeBlock
+                code={showFormattedXml ? formattedXml : rawXml}
+                language="xml"
+                showLineNumbers={true}
+                maxHeight="400px"
+                copyButtonText={`Copy ${showFormattedXml ? 'Formatted' : 'Raw'} XML`}
+              />
             </div>
           </SectionCard>
         </div>
