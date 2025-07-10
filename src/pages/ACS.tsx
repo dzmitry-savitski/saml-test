@@ -60,8 +60,8 @@ const ACS: React.FC = () => {
       const responseId = searchParams.get('response');
       if (responseId) {
         setHasProcessedResponse(true);
-        // Fetch SAML data from API using response ID
-        fetchSamlDataFromSession(responseId, foundSp, spId);
+        // Fetch SAML data from sessionStorage using response ID
+        fetchSamlDataFromSessionStorage(responseId, foundSp, spId);
       } else {
         setError('No response ID found in URL parameters');
         setIsLoading(false);
@@ -71,47 +71,32 @@ const ACS: React.FC = () => {
 
 
 
-  const fetchSamlDataFromSession = async (responseId: string, sp: ServiceProvider, urlSpId: string) => {
+  const fetchSamlDataFromSessionStorage = (responseId: string, sp: ServiceProvider, urlSpId: string) => {
     try {
-      const response = await fetch('/acs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ responseId: responseId })
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          setError('SAML session not found or expired');
-        } else if (response.status === 410) {
-          setError('SAML session has expired');
-        } else {
-          setError(`Failed to fetch SAML data: ${response.statusText}`);
-        }
+      const key = `saml-response-${responseId}`;
+      const stored = sessionStorage.getItem(key);
+      if (!stored) {
+        setError('SAML response not found in session storage or already used.');
         setIsLoading(false);
         return;
       }
-      
-      const data = await response.json();
-      
-      console.log('SAML data received:', { 
-        spId: data.spId, 
-        currentSpId: sp.id, 
-        urlSpId: urlSpId,
-        relayState: data.relayState 
-      });
-      
+      const data = JSON.parse(stored);
+      // Remove from sessionStorage after reading (one-time use)
+      sessionStorage.removeItem(key);
+      // Check expiry
+      if (!data.expiresAt || Date.now() > data.expiresAt) {
+        setError('SAML response has expired.');
+        setIsLoading(false);
+        return;
+      }
       // Verify SP ID matches
       if (data.spId !== urlSpId) {
         console.warn('SP ID mismatch:', { sessionSpId: data.spId, urlSpId });
       }
-      
       // Process the SAML response data
       processSAMLResponseData(data.samlResponse, sp, data.relayState || undefined);
-      
     } catch (error) {
-      console.error('Error fetching SAML data from session:', error);
+      console.error('Error fetching SAML data from sessionStorage:', error);
       setError(`Failed to fetch SAML data: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsLoading(false);
     }

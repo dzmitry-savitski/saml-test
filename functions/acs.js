@@ -7,55 +7,8 @@ export async function onRequestPost(context) {
   
   // Check if this is a response retrieval request (no sp parameter means it's a retrieval request)
   const spId = url.searchParams.get('sp');
-  
-  if (!spId) {
-    // This is a retrieval request - get response ID from JSON body
-    try {
-      const body = await request.json();
-      const responseId = body.responseId;
-      
-      if (!responseId) {
-        return new Response('Response ID not provided in request body', { status: 400 });
-      }
-      
-      // Get session data
-      const sessionData = samlSessions.get(responseId);
-      
-      if (!sessionData) {
-        return new Response('Session not found or expired', { status: 404 });
-      }
-      
-      // Check if session has expired
-      if (sessionData.expiresAt < Date.now()) {
-        samlSessions.delete(responseId);
-        return new Response('Session expired', { status: 410 });
-      }
-      
-      // Return SAML data as JSON
-      const response = new Response(JSON.stringify({
-        samlResponse: sessionData.samlResponse,
-        relayState: sessionData.relayState,
-        spId: sessionData.spId
-      }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
-      });
-      
-      // Delete the session after retrieving it (one-time use)
-      samlSessions.delete(responseId);
-      
-      return response;
-      
-    } catch (error) {
-      console.error('Error retrieving SAML session:', error);
-      return new Response('Internal Server Error', { status: 500 });
-    }
-  }
-  
-  // This is a SAML response storage request
+
+  // Only support SAML response storage requests now
   try {
     // Parse form data from the POST request
     const formData = await request.formData();
@@ -68,31 +21,40 @@ export async function onRequestPost(context) {
     
     // Generate UUID for this response
     const responseId = crypto.randomUUID();
-    
-    // Store SAML data in session (with 5 minute expiry)
-    const sessionData = {
-      samlResponse,
-      relayState: relayState || null,
-      spId,
-      createdAt: Date.now(),
-      expiresAt: Date.now() + (2 * 60 * 1000) // 1 minute
-    };
-    
-    samlSessions.set(responseId, sessionData);
-    
-    // Clean up expired sessions
-    cleanupExpiredSessions();
-    
-    // Redirect to React app with response ID
-    const response = new Response(null, {
-      status: 302,
+    const expiry = Date.now() + (1 * 60 * 1000); // 1 minute
+
+    // Generate HTML/JS page to save in sessionStorage and redirect
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SAML Session Storage</title>
+  <script>
+    (function() {
+      var data = {
+        samlResponse: ${JSON.stringify(samlResponse)},
+        relayState: ${JSON.stringify(relayState || null)},
+        spId: ${JSON.stringify(spId)},
+        expiresAt: ${expiry}
+      };
+      var key = 'saml-response-' + ${JSON.stringify(responseId)};
+      sessionStorage.setItem(key, JSON.stringify(data));
+      window.location.replace('/sp/' + ${JSON.stringify(spId)} + '/acs?response=' + ${JSON.stringify(responseId)});
+    })();
+  </script>
+</head>
+<body>
+  <noscript>JavaScript is required to complete SAML login.</noscript>
+</body>
+</html>`;
+
+    return new Response(html, {
+      status: 200,
       headers: {
-        'Location': `/sp/${spId}/acs?response=${responseId}`
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate'
       }
     });
-    
-    return response;
-    
   } catch (error) {
     console.error('Error processing SAML ACS request:', error);
     return new Response('Internal Server Error', { status: 500 });
