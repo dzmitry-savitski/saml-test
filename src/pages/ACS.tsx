@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useSPStore } from '../hooks/useSPStore';
 import { getStoredRequestId, clearStoredRequestId, decodeSamlResponse, validateSAMLResponse } from '../utils/samlUtils';
+import { formatXml, removeXmlHighlighting } from '../utils/xmlUtils';
 import type { ServiceProvider } from '../types/samlConfig';
 import { Button } from '../components/ui/button';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -38,7 +39,8 @@ const ACS: React.FC = () => {
   const [samlResponse, setSamlResponse] = useState<SAMLResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasProcessedResponse, setHasProcessedResponse] = useState(false);
-  const [showFormattedXml, setShowFormattedXml] = useState(false);
+  const [showFormattedXml, setShowFormattedXml] = useState(true);
+  const [formattedXml, setFormattedXml] = useState<string>('');
 
     // Load SP data and process SAML response on mount
   useEffect(() => {
@@ -80,41 +82,7 @@ const ACS: React.FC = () => {
 
 
 
-  const formatXml = (xml: string): string => {
-    try {
-      // Parse and format XML
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xml, 'text/xml');
-      const serializer = new XMLSerializer();
-      const formatted = serializer.serializeToString(xmlDoc);
-      
-      // Add syntax highlighting
-      return formatted
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/&lt;(\/?)([^>]*?)&gt;/g, (_, slash, content) => {
-          const isClosing = slash === '/';
-          const isSelfClosing = content.endsWith('/');
-          const tagName = content.split(' ')[0];
-          
-          let color = '#0066cc'; // default blue for tags
-          if (isClosing) color = '#cc0066'; // red for closing tags
-          if (isSelfClosing) color = '#666666'; // gray for self-closing tags
-          if (tagName.startsWith('saml:')) color = '#006600'; // green for SAML elements
-          if (tagName.startsWith('samlp:')) color = '#660066'; // purple for SAML protocol elements
-          if (tagName.startsWith('ds:')) color = '#cc6600'; // orange for signature elements
-          if (tagName.startsWith('md:')) color = '#006666'; // teal for metadata elements
-          
-          return `<span style="color: ${color}">&lt;${slash}${content}&gt;</span>`;
-        })
-        .replace(/&amp;([^;]+);/g, '<span style="color: #666666">&amp;$1;</span>') // entities
-        .replace(/([a-zA-Z-]+)=&quot;([^&]*?)&quot;/g, '<span style="color: #cc0066">$1</span>=<span style="color: #006600">&quot;$2&quot;</span>'); // attributes
-    } catch (error) {
-      console.error('Error formatting XML:', error);
-      return xml; // fallback to original XML
-    }
-  };
+
 
   const fetchSamlDataFromSessionStorage = (responseId: string, sp: ServiceProvider, urlSpId: string) => {
     try {
@@ -200,6 +168,10 @@ const ACS: React.FC = () => {
 
       // Validate SAML response signatures
       const validation = validateSAMLResponse(xmlDoc, sp);
+      
+      // Format the XML for display
+      const formatted = formatXml(xmlResponse);
+      setFormattedXml(formatted);
       
       setSamlResponse({
         nameId,
@@ -385,17 +357,17 @@ const ACS: React.FC = () => {
           <SectionCard>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Raw SAML Response XML</h2>
+                <h2 className="text-xl font-semibold">SAML Response XML</h2>
                 <div className="flex gap-2">
                   <Button
-                    variant={showFormattedXml ? "default" : "outline"}
+                    variant={showFormattedXml ? "outline" : "default"}
                     size="sm"
                     onClick={() => setShowFormattedXml(false)}
                   >
                     Raw
                   </Button>
                   <Button
-                    variant={showFormattedXml ? "outline" : "default"}
+                    variant={showFormattedXml ? "default" : "outline"}
                     size="sm"
                     onClick={() => setShowFormattedXml(true)}
                   >
@@ -414,7 +386,7 @@ const ACS: React.FC = () => {
                       lineHeight: '1.4'
                     }}
                     dangerouslySetInnerHTML={{ 
-                      __html: formatXml(samlResponse.rawXml) 
+                      __html: formattedXml 
                     }}
                   />
                 </div>
@@ -434,11 +406,14 @@ const ACS: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    navigator.clipboard.writeText(samlResponse.rawXml);
-                    toast.success('Raw XML copied to clipboard!');
+                    const textToCopy = showFormattedXml ? 
+                      removeXmlHighlighting(formattedXml) : 
+                      samlResponse.rawXml;
+                    navigator.clipboard.writeText(textToCopy);
+                    toast.success(`${showFormattedXml ? 'Formatted' : 'Raw'} XML copied to clipboard!`);
                   }}
                 >
-                  Copy XML
+                  Copy {showFormattedXml ? 'Formatted' : 'Raw'} XML
                 </Button>
               </div>
             </div>
