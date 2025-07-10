@@ -260,19 +260,6 @@ const ACS: React.FC = () => {
       {/* SAML Response Content */}
       {samlResponse && (
         <div className="space-y-6">
-          {/* Status */}
-          <Alert className={samlResponse.status === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}>
-            <AlertDescription>
-              <div>
-                <h3 className="font-bold">
-                  {samlResponse.status === 'success' ? 'Authentication Successful' : 'Authentication Failed'}
-                </h3>
-                {samlResponse.errorMessage && (
-                  <div className="text-sm">{samlResponse.errorMessage}</div>
-                )}
-              </div>
-            </AlertDescription>
-          </Alert>
 
           {/* SAML Response Details */}
           <SectionCard>
@@ -335,54 +322,60 @@ const ACS: React.FC = () => {
             <SectionCard>
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Signature Validation</h2>
-                <div className={`p-4 rounded-lg ${samlResponse.validation.isValid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-3 h-3 rounded-full ${samlResponse.validation.isValid ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                      <span className="font-medium">
-                        {samlResponse.validation.isValid ? 'Validation Passed' : 'Validation Failed'}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Response Signed:</span>
-                        <span className={`ml-2 ${samlResponse.validation.responseSigned ? 'text-green-600' : 'text-gray-500'}`}>
-                          {samlResponse.validation.responseSigned ? 'Yes' : 'No'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Response Valid:</span>
-                        <span className={`ml-2 ${samlResponse.validation.responseSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
-                          {samlResponse.validation.responseSignatureValid ? 'Yes' : 'No'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Assertion Signed:</span>
-                        <span className={`ml-2 ${samlResponse.validation.assertionSigned ? 'text-green-600' : 'text-gray-500'}`}>
-                          {samlResponse.validation.assertionSigned ? 'Yes' : 'No'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Assertion Valid:</span>
-                        <span className={`ml-2 ${samlResponse.validation.assertionSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
-                          {samlResponse.validation.assertionSignatureValid ? 'Yes' : 'No'}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {samlResponse.validation.errors.length > 0 && (
-                      <div className="mt-2">
-                        <span className="font-medium text-red-600">Errors:</span>
-                        <ul className="list-disc list-inside text-red-600 text-sm mt-1">
-                          {samlResponse.validation.errors.map((error, index) => (
-                            <li key={index}>{error}</li>
-                          ))}
-                        </ul>
-                      </div>
+                
+                {/* Show red alert if no signatures present */}
+                {!samlResponse.validation.responseSigned && !samlResponse.validation.assertionSigned && (
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      This SAML response contains no signatures at all and is not secure!
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {/* Show signature details if any signatures are present */}
+                {(samlResponse.validation.responseSigned || samlResponse.validation.assertionSigned) && (
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    {samlResponse.validation.responseSigned && (
+                      <>
+                        <div>
+                          <span className="font-medium">Response Signed:</span>
+                          <span className="ml-2">Yes</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Response Valid:</span>
+                          <span className={`ml-2 ${samlResponse.validation.responseSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
+                            {samlResponse.validation.responseSignatureValid ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {samlResponse.validation.assertionSigned && (
+                      <>
+                        <div>
+                          <span className="font-medium">Assertion Signed:</span>
+                          <span className="ml-2">Yes</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Assertion Valid:</span>
+                          <span className={`ml-2 ${samlResponse.validation.assertionSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
+                            {samlResponse.validation.assertionSignatureValid ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                      </>
                     )}
                   </div>
-                </div>
+                )}
+                
+                {samlResponse.validation.errors.length > 0 && (
+                  <div className="mt-2">
+                    <span className="font-medium text-red-600">Errors:</span>
+                    <ul className="list-disc list-inside text-red-600 text-sm mt-1">
+                      {samlResponse.validation.errors.map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </SectionCard>
           )}
