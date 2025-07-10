@@ -52,7 +52,7 @@ export function createAuthnRequest(sp: ServiceProvider, forceAuthn: boolean = fa
                     ID="${requestId}"
                     Version="2.0"
                     IssueInstant="${issueInstant}"
-                    ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-${sp.spAcsBinding}"
+                    ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:${sp.spAcsBinding}"
                     AssertionConsumerServiceURL="${sp.acsUrl}"
                     Destination="${sp.idp.ssoUrl}"
                     ${forceAuthn ? 'ForceAuthn="true"' : ''}
@@ -186,7 +186,7 @@ export function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = fals
     
     // Encode the request based on binding
     let encodedRequest: string;
-    if (sp.idp.singleSignOnBinding === 'GET') {
+    if (sp.idp.singleSignOnBinding === 'HTTP-Redirect') {
       encodedRequest = encodeSamlRequest(samlRequest); // deflate + base64
     } else {
       encodedRequest = base64EncodeSamlRequest(samlRequest); // base64 only
@@ -196,11 +196,11 @@ export function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = fals
     const finalRelayState = relayState || sp.id;
     
     // Redirect to IDP based on binding
-    if (sp.idp.singleSignOnBinding === 'GET') {
+    if (sp.idp.singleSignOnBinding === 'HTTP-Redirect') {
       const url = `${sp.idp.ssoUrl}?SAMLRequest=${encodeURIComponent(encodedRequest)}&RelayState=${encodeURIComponent(finalRelayState)}`;
       window.location.href = url;
     } else {
-      // POST binding - create a form and submit it
+      // HTTP-POST binding - create a form and submit it
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = sp.idp.ssoUrl;

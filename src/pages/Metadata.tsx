@@ -71,7 +71,7 @@ const Metadata: React.FC = () => {
                      entityID="${serviceProvider.entityId || ''}">
   <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
     ${serviceProvider.sloUrl ? `<md:SingleLogoutService 
-      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-${serviceProvider.spSloBinding || 'POST'}"
+      Binding="urn:oasis:names:tc:SAML:2.0:bindings:${serviceProvider.spSloBinding || 'HTTP-POST'}"
       Location="${serviceProvider.sloUrl}" />` : ''}
     ${serviceProvider.certificate ? `<md:KeyDescriptor use="signing">
       <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
@@ -89,7 +89,7 @@ const Metadata: React.FC = () => {
     </md:KeyDescriptor>` : ''}
     <md:NameIDFormat>${serviceProvider.nameIdFormat || 'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified'}</md:NameIDFormat>
     <md:AssertionConsumerService 
-      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-${serviceProvider.spAcsBinding || 'POST'}"
+      Binding="urn:oasis:names:tc:SAML:2.0:bindings:${serviceProvider.spAcsBinding || 'HTTP-POST'}"
       Location="${serviceProvider.acsUrl || ''}"
       index="0" />
   </md:SPSSODescriptor>
@@ -154,10 +154,10 @@ const Metadata: React.FC = () => {
               readOnly
             />
             <CopyInput
-              value="POST"
+              value="HTTP-POST"
               label="ACS Binding"
               readOnly
-              copyValue="POST"
+              copyValue="HTTP-POST"
             />
           </div>
         </div>

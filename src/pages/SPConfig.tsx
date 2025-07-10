@@ -46,7 +46,7 @@ const SPConfig: React.FC = () => {
       const updatedSp = {
         ...sp,
         acsUrl: `${window.location.origin}/acs?sp=${spId}`,
-        spAcsBinding: 'POST' as const
+        spAcsBinding: 'HTTP-POST' as const
       };
       setFormData(updatedSp);
       hasLoadedData.current = true;
@@ -137,7 +137,7 @@ const SPConfig: React.FC = () => {
       const updatedFormData = {
         ...formData,
         acsUrl: `${window.location.origin}/acs?sp=${spId}`,
-        spAcsBinding: 'POST' as const
+        spAcsBinding: 'HTTP-POST' as const
       };
       
       updateSP(spId, updatedFormData);
@@ -185,7 +185,7 @@ const SPConfig: React.FC = () => {
         }
         if (binding) {
           const isPost = binding.includes('HTTP-POST');
-          handleInputChange('idp.singleSignOnBinding', isPost ? 'POST' : 'GET');
+          handleInputChange('idp.singleSignOnBinding', isPost ? 'HTTP-POST' : 'HTTP-Redirect');
         }
       }
 
@@ -414,7 +414,7 @@ const SPConfig: React.FC = () => {
                 <Input
                   type="text"
                   className="bg-gray-100"
-                  value="POST"
+                  value="HTTP-POST"
                   readOnly
                 />
                 <Button
@@ -423,7 +423,7 @@ const SPConfig: React.FC = () => {
                   variant="ghost"
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
                   onClick={() => {
-                    navigator.clipboard.writeText('POST');
+                    navigator.clipboard.writeText('HTTP-POST');
                     toast.success('ACS Binding copied!');
                   }}
                   tabIndex={-1}
@@ -432,7 +432,7 @@ const SPConfig: React.FC = () => {
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-gray-500">Only POST binding is supported</p>
+              <p className="text-sm text-gray-500">Only HTTP-POST binding is supported</p>
             </div>
           </div>
 
@@ -595,10 +595,10 @@ const SPConfig: React.FC = () => {
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.idp.singleSignOnBinding}
-                onChange={(e) => handleInputChange('idp.singleSignOnBinding', e.target.value as 'POST' | 'GET')}
+                onChange={(e) => handleInputChange('idp.singleSignOnBinding', e.target.value as 'HTTP-POST' | 'HTTP-Redirect')}
               >
-                <option value="POST">POST</option>
-                <option value="GET">GET</option>
+                <option value="HTTP-POST">HTTP-POST</option>
+                <option value="HTTP-Redirect">HTTP-Redirect</option>
               </select>
             </div>
 
@@ -652,11 +652,11 @@ const SPConfig: React.FC = () => {
               </label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={formData.idp.sloBinding || 'POST'}
-                onChange={(e) => handleInputChange('idp.sloBinding', e.target.value as 'POST' | 'GET')}
+                value={formData.idp.sloBinding || 'HTTP-POST'}
+                onChange={(e) => handleInputChange('idp.sloBinding', e.target.value as 'HTTP-POST' | 'HTTP-Redirect')}
               >
-                <option value="POST">POST</option>
-                <option value="GET">GET</option>
+                <option value="HTTP-POST">HTTP-POST</option>
+                <option value="HTTP-Redirect">HTTP-Redirect</option>
               </select>
             </div>
           </div>
