@@ -138,7 +138,11 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
     signedInfo.appendChild(reference);
     signatureElement.appendChild(signedInfo);
     
-    // Add KeyInfo with certificate if provided (before SignatureValue)
+    const signatureValueElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:SignatureValue');
+    signatureValueElement.textContent = signatureValue;
+    signatureElement.appendChild(signatureValueElement);
+    
+    // Add KeyInfo with certificate if provided (after SignatureValue according to XSD)
     if (certificatePem) {
       const keyInfo = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:KeyInfo');
       const x509Data = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:X509Data');
@@ -156,17 +160,13 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
       signatureElement.appendChild(keyInfo);
     }
     
-    const signatureValueElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:SignatureValue');
-    signatureValueElement.textContent = signatureValue;
-    signatureElement.appendChild(signatureValueElement);
-    
-    // Insert signature after Issuer but before NameIDPolicy
+    // Insert signature after Issuer according to SAML schema (RequestAbstractType)
     const issuer = authnRequest.querySelector('saml\\:Issuer, Issuer');
     if (issuer) {
-      // Insert after Issuer
+      // Insert after Issuer (following the schema order: Issuer -> Signature -> Extensions -> other elements)
       issuer.parentNode?.insertBefore(signatureElement, issuer.nextSibling);
     } else {
-      // If no Issuer, insert at the beginning
+      // If no Issuer, insert at the beginning (before any other elements)
       authnRequest.insertBefore(signatureElement, authnRequest.firstChild);
     }
     
