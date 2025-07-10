@@ -333,31 +333,38 @@ const ACS: React.FC = () => {
                 )}
                 
                 {/* Show signature details for both response and assertion */}
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium">Response Signed:</span>
-                    <span className="ml-2">{samlResponse.validation.responseSigned ? 'Yes' : 'No'}</span>
-                  </div>
-                  {samlResponse.validation.responseSigned && (
+                <div className="space-y-3 text-sm">
+                  {/* Response signature info */}
+                  <div className="flex items-center gap-4">
                     <div>
-                      <span className="font-medium">Response Signature Valid:</span>
-                      <span className={`ml-2 ${samlResponse.validation.responseSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
-                        {samlResponse.validation.responseSignatureValid ? 'Yes' : 'No'}
-                      </span>
+                      <span className="font-medium">Response Signed:</span>
+                      <span className="ml-2">{samlResponse.validation.responseSigned ? 'Yes' : 'No'}</span>
                     </div>
-                  )}
-                  <div>
-                    <span className="font-medium">Assertion Signed:</span>
-                    <span className="ml-2">{samlResponse.validation.assertionSigned ? 'Yes' : 'No'}</span>
+                    {samlResponse.validation.responseSigned && (
+                      <div>
+                        <span className="font-medium">Response Signature Valid:</span>
+                        <span className={`ml-2 ${samlResponse.validation.responseSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
+                          {samlResponse.validation.responseSignatureValid ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  {samlResponse.validation.assertionSigned && (
+                  
+                  {/* Assertion signature info */}
+                  <div className="flex items-center gap-4">
                     <div>
-                      <span className="font-medium">Assertion Signature Valid:</span>
-                      <span className={`ml-2 ${samlResponse.validation.assertionSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
-                        {samlResponse.validation.assertionSignatureValid ? 'Yes' : 'No'}
-                      </span>
+                      <span className="font-medium">Assertion Signed:</span>
+                      <span className="ml-2">{samlResponse.validation.assertionSigned ? 'Yes' : 'No'}</span>
                     </div>
-                  )}
+                    {samlResponse.validation.assertionSigned && (
+                      <div>
+                        <span className="font-medium">Assertion Signature Valid:</span>
+                        <span className={`ml-2 ${samlResponse.validation.assertionSignatureValid ? 'text-green-600' : 'text-red-600'}`}>
+                          {samlResponse.validation.assertionSignatureValid ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 {samlResponse.validation.errors.length > 0 && (
