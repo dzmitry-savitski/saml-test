@@ -94,7 +94,7 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
     canonicalizationMethod.setAttribute('Algorithm', 'http://www.w3.org/2001/10/xml-exc-c14n#');
     
     const signatureMethod = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:SignatureMethod');
-    signatureMethod.setAttribute('Algorithm', 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256');
+    signatureMethod.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#rsa-sha1');
     
     const reference = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Reference');
     reference.setAttribute('URI', `#${authnRequest.getAttribute('ID')}`);
@@ -107,8 +107,13 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
     const transform2 = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Transform');
     transform2.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#enveloped-signature');
     
+    // Add InclusiveNamespaces as shown in the SAML spec
+    const inclusiveNamespaces = xmlDoc.createElementNS('http://www.w3.org/2001/10/xml-exc-c14n#', 'InclusiveNamespaces');
+    inclusiveNamespaces.setAttribute('PrefixList', '#default saml ds xs xsi');
+    transform2.appendChild(inclusiveNamespaces);
+    
     const digestMethod = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:DigestMethod');
-    digestMethod.setAttribute('Algorithm', 'http://www.w3.org/2001/04/xmlenc#sha256');
+    digestMethod.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#sha1');
     
     // Build the signature structure
     transforms.appendChild(transform1);
@@ -130,7 +135,7 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
     
     // Now calculate digest of the document with signature element
     const documentWithSignature = new XMLSerializer().serializeToString(xmlDoc);
-    const digest = forge.md.sha256.create();
+    const digest = forge.md.sha1.create();
     digest.update(documentWithSignature, 'utf8');
     const digestValue = forge.util.encode64(digest.digest().getBytes());
     
@@ -141,7 +146,7 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
     
     // Create canonicalized SignedInfo for signing
     const canonicalizedSignedInfo = new XMLSerializer().serializeToString(signedInfo);
-    const md = forge.md.sha256.create();
+    const md = forge.md.sha1.create();
     md.update(canonicalizedSignedInfo, 'utf8');
     const signature = privateKey.sign(md);
     const signatureValue = forge.util.encode64(signature);
