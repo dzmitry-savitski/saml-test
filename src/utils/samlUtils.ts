@@ -84,21 +84,7 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
       throw new Error('AuthnRequest element not found');
     }
     
-    // Create a canonicalized version of the XML for signing
-    const canonicalizedXml = new XMLSerializer().serializeToString(xmlDoc);
-    
-    // Create signature using RSA-SHA256
-    const md = forge.md.sha256.create();
-    md.update(canonicalizedXml, 'utf8');
-    const signature = privateKey.sign(md);
-    const signatureValue = forge.util.encode64(signature);
-    
-    // Calculate digest
-    const digest = forge.md.sha256.create();
-    digest.update(canonicalizedXml, 'utf8');
-    const digestValue = forge.util.encode64(digest.digest().getBytes());
-    
-    // Create signature element
+    // Create signature element first (without signature value)
     const signatureElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Signature');
     
     // Create SignedInfo
@@ -116,33 +102,56 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
     const transforms = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Transforms');
     
     const transform1 = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Transform');
-    transform1.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#enveloped-signature');
+    transform1.setAttribute('Algorithm', 'http://www.w3.org/2001/10/xml-exc-c14n#');
     
     const transform2 = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Transform');
-    transform2.setAttribute('Algorithm', 'http://www.w3.org/2001/10/xml-exc-c14n#');
+    transform2.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#enveloped-signature');
     
     const digestMethod = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:DigestMethod');
     digestMethod.setAttribute('Algorithm', 'http://www.w3.org/2001/04/xmlenc#sha256');
-    
-    const digestValueElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:DigestValue');
-    digestValueElement.textContent = digestValue;
     
     // Build the signature structure
     transforms.appendChild(transform1);
     transforms.appendChild(transform2);
     reference.appendChild(transforms);
     reference.appendChild(digestMethod);
-    reference.appendChild(digestValueElement);
     signedInfo.appendChild(canonicalizationMethod);
     signedInfo.appendChild(signatureMethod);
     signedInfo.appendChild(reference);
     signatureElement.appendChild(signedInfo);
     
+    // Insert signature into the document first
+    const issuer = authnRequest.querySelector('saml\\:Issuer, Issuer');
+    if (issuer) {
+      issuer.parentNode?.insertBefore(signatureElement, issuer.nextSibling);
+    } else {
+      authnRequest.insertBefore(signatureElement, authnRequest.firstChild);
+    }
+    
+    // Now calculate digest of the document with signature element
+    const documentWithSignature = new XMLSerializer().serializeToString(xmlDoc);
+    const digest = forge.md.sha256.create();
+    digest.update(documentWithSignature, 'utf8');
+    const digestValue = forge.util.encode64(digest.digest().getBytes());
+    
+    // Add digest value
+    const digestValueElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:DigestValue');
+    digestValueElement.textContent = digestValue;
+    reference.appendChild(digestValueElement);
+    
+    // Create canonicalized SignedInfo for signing
+    const canonicalizedSignedInfo = new XMLSerializer().serializeToString(signedInfo);
+    const md = forge.md.sha256.create();
+    md.update(canonicalizedSignedInfo, 'utf8');
+    const signature = privateKey.sign(md);
+    const signatureValue = forge.util.encode64(signature);
+    
+    // Add signature value
     const signatureValueElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:SignatureValue');
     signatureValueElement.textContent = signatureValue;
     signatureElement.appendChild(signatureValueElement);
     
-    // Add KeyInfo with certificate if provided (after SignatureValue according to XSD)
+    // Add KeyInfo with certificate if provided
     if (certificatePem) {
       const keyInfo = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:KeyInfo');
       const x509Data = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:X509Data');
@@ -158,16 +167,6 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
       x509Data.appendChild(x509Certificate);
       keyInfo.appendChild(x509Data);
       signatureElement.appendChild(keyInfo);
-    }
-    
-    // Insert signature after Issuer according to SAML schema (RequestAbstractType)
-    const issuer = authnRequest.querySelector('saml\\:Issuer, Issuer');
-    if (issuer) {
-      // Insert after Issuer (following the schema order: Issuer -> Signature -> Extensions -> other elements)
-      issuer.parentNode?.insertBefore(signatureElement, issuer.nextSibling);
-    } else {
-      // If no Issuer, insert at the beginning (before any other elements)
-      authnRequest.insertBefore(signatureElement, authnRequest.firstChild);
     }
     
     // Serialize back to string
