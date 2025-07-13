@@ -1,5 +1,26 @@
 import pako from 'pako';
 import type { ServiceProvider } from '../types/samlConfig';
+import { Application } from 'xmldsigjs';
+
+// Set up webcrypto and engine for xmldsigjs
+let webcrypto: Crypto;
+let engine: 'NodeJS' | 'WebCrypto';
+
+if (
+  typeof process !== 'undefined' &&
+  process.versions &&
+  process.versions.node
+) {
+  // Node.js or Vitest
+  webcrypto = require('crypto').webcrypto;
+  engine = 'NodeJS';
+} else {
+  // Browser
+  webcrypto = window.crypto;
+  engine = 'WebCrypto';
+}
+
+Application.setEngine(engine, webcrypto);
 
 // Session storage key prefix for storing request IDs
 const REQUEST_ID_PREFIX = 'saml_request_';
@@ -68,7 +89,7 @@ export function createAuthnRequest(sp: ServiceProvider, forceAuthn: boolean = fa
 /**
  * Signs a SAML request with the SP's private key using xmldsigjs
  */
-export async function signAuthnRequest(samlRequest: string, privateKeyPem: string, certificatePem?: string): Promise<string> {
+export async function signAuthnRequest(samlRequest: string, privateKeyPem: string): Promise<string> {
   try {
     // Parse the XML using DOM
     const parser = new DOMParser();
@@ -95,9 +116,12 @@ export async function signAuthnRequest(samlRequest: string, privateKeyPem: strin
     
     // Create SignedXml instance
     const signedXml = new SignedXml();
+    // Set exclusive canonicalization using the correct property chain
+    signedXml.XmlSignature.SignedInfo.CanonicalizationMethod.Algorithm = 'http://www.w3.org/2001/10/xml-exc-c14n#';
+    // Try to set prefix to empty string to use default namespace (like xml-crypto)
+    (signedXml as any).prefix = '';
     
-    // Sign the document without passing public key to xmldsigjs
-    // Let xmldsigjs handle KeyInfo generation from the private key
+    // Sign the document
     await signedXml.Sign(
       { name: 'RSASSA-PKCS1-v1_5' }, // algorithm
       privateKey, // private key
@@ -106,7 +130,8 @@ export async function signAuthnRequest(samlRequest: string, privateKeyPem: strin
         references: [
           {
             hash: 'SHA-1',
-            transforms: ['enveloped', 'exc-c14n']
+            transforms: ['enveloped', 'exc-c14n'], // Use 'exc-c14n' for exclusive canonicalization
+            uri: `#${requestId}` // Set the URI to reference the element by ID
           }
         ]
       }
@@ -169,7 +194,7 @@ async function convertPemToCryptoKey(pem: string, type: 'public' | 'private'): P
     if (type === 'private') {
       // Import private key - PKCS#8 format
       // xmldsigjs needs the key to be extractable for KeyInfo generation
-      return await crypto.subtle.importKey(
+      return await webcrypto.subtle.importKey(
         'pkcs8',
         binary,
         {
@@ -189,7 +214,7 @@ async function convertPemToCryptoKey(pem: string, type: 'public' | 'private'): P
       const publicKeyBuffer = cert.subjectPublicKeyInfo.toSchema().toBER(false);
       
       // Import the public key
-      return await crypto.subtle.importKey(
+      return await webcrypto.subtle.importKey(
         'spki',
         publicKeyBuffer,
         {
@@ -264,7 +289,7 @@ export async function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean 
     
     // Sign the request if required
     if (sp.signAuthnRequest && sp.privateKey) {
-      samlRequest = await signAuthnRequest(samlRequest, sp.privateKey, sp.certificate);
+      samlRequest = await signAuthnRequest(samlRequest, sp.privateKey);
     }
     
     // Extract request ID for storage

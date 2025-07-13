@@ -8,6 +8,16 @@ import {
   BasicConstraints,
 } from "pkijs";
 
+// Use Node.js built-in WebCrypto if available, otherwise browser crypto
+let webcrypto: Crypto;
+if (typeof require !== 'undefined') {
+  webcrypto = require('crypto').webcrypto;
+} else if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+  webcrypto = window.crypto;
+} else {
+  webcrypto = (globalThis as any).crypto;
+}
+
 // Helper: ArrayBuffer to PEM
 function toPEM(buffer: ArrayBuffer, label: string): string {
   const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
@@ -18,16 +28,16 @@ export async function generateKeyPairAndCertificate(commonName: string): Promise
   privateKeyPem: string;
   certificatePem: string;
 }> {
-  // 1. Generate key pair
-  const keyPair = await crypto.subtle.generateKey(
+  // Generate a key pair using Web Crypto API
+  const keyPair = await webcrypto.subtle.generateKey(
     {
-      name: "RSASSA-PKCS1-v1_5",
+      name: 'RSASSA-PKCS1-v1_5',
       modulusLength: 2048,
       publicExponent: new Uint8Array([1, 0, 1]),
-      hash: "SHA-256"
+      hash: 'SHA-256',
     },
-    true,
-    ["sign", "verify"]
+    true, // extractable
+    ['sign', 'verify']
   );
 
   // 2. Create certificate
@@ -67,7 +77,7 @@ export async function generateKeyPairAndCertificate(commonName: string): Promise
 
   // 5. Export as PEM
   const certBuffer = cert.toSchema().toBER(false);
-  const privateKeyBuffer = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+  const privateKeyBuffer = await webcrypto.subtle.exportKey("pkcs8", keyPair.privateKey);
 
   return {
     privateKeyPem: toPEM(privateKeyBuffer, "PRIVATE KEY"),

@@ -4,10 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "vite":"npx vite dev --host 127.0.0.1 --port 8788",
+    "vite": "npx vite dev --host 127.0.0.1 --port 8788",
     "dev": "npm run build && npx wrangler pages dev",
     "build": "tsc -b && vite build",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run --run",
+    "test:watch": "vitest run"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
@@ -40,15 +44,19 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
+    "@vitest/ui": "^3.2.4",
     "eslint": "^9.30.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.2.0",
+    "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "tw-animate-css": "^1.3.5",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.34.1",
     "vite": "^7.0.0",
-    "wrangler": "^4.23.0"
+    "vitest": "^3.2.4",
+    "wrangler": "^4.23.0",
+    "xml-crypto": "^5.1.1"
   }
 }
