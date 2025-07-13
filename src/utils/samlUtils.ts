@@ -294,62 +294,81 @@ export function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = fals
 } 
 
 /**
- * Validates SAML response signature
+ * Validates SAML response signature using xmldsigjs (async)
  */
-export function validateResponseSignature(xmlDoc: Document, idpCertificate: string): boolean {
+export async function validateResponseSignature(xmlDoc: Document): Promise<boolean> {
   try {
-    // Find the Response element
-    const responseElement = xmlDoc.querySelector('samlp\\:Response, Response');
-    if (!responseElement) {
-      console.warn('No Response element found');
+    // The Response element is always the root in SAML responses
+    const responseElement = xmlDoc.documentElement;
+    if (!responseElement || !responseElement.tagName.includes('Response')) {
+      console.warn('No Response element found at root');
       return false;
     }
-
-    // Check if Response is signed - look for signature as direct child of response
-    const signatureElement = responseElement.querySelector(':scope > ds\\:Signature, :scope > Signature');
-    if (!signatureElement) {
+    
+    // Find signature by namespace
+    const signatures = xmlDoc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'Signature');
+    
+    if (signatures.length === 0) {
       console.warn('Response is not signed');
       return false;
     }
-
-    // Extract signature value
-    const signatureValueElement = signatureElement.querySelector('ds\\:SignatureValue, SignatureValue');
-    if (!signatureValueElement || !signatureValueElement.textContent) {
-      console.warn('No signature value found');
-      return false;
-    }
-
-    // Extract signed info
-    const signedInfoElement = signatureElement.querySelector('ds\\:SignedInfo, SignedInfo');
-    if (!signedInfoElement) {
-      console.warn('No SignedInfo found');
-      return false;
-    }
-
-    // Extract certificate
-    const certElement = signatureElement.querySelector('ds\\:X509Certificate, X509Certificate');
-    if (!certElement || !certElement.textContent) {
-      console.warn('No certificate found in signature');
-      return false;
-    }
-
-    // Validate certificate matches IDP certificate
-    const responseCert = certElement.textContent.trim();
-    const idpCert = idpCertificate
-      .replace(/-----BEGIN CERTIFICATE-----/, '')
-      .replace(/-----END CERTIFICATE-----/, '')
-      .replace(/\s/g, '');
     
-    if (responseCert !== idpCert) {
-      console.warn('Certificate mismatch');
+    // Find the signature that's a direct child of the response (root)
+    let responseSignature: Element | null = null;
+    for (let i = 0; i < signatures.length; i++) {
+      const sig = signatures[i];
+      if (sig.parentElement === responseElement) {
+        responseSignature = sig;
+        break;
+      }
+    }
+    
+    if (!responseSignature) {
+      console.warn('Response signature not found');
       return false;
     }
-
-    // For now, we'll do basic validation
-    // In a production environment, you'd want to use a proper XML signature library
-    // like xml-crypto or similar to validate the actual cryptographic signature
-    console.log('Response signature validation passed (basic check)');
-    return true;
+    
+    const { SignedXml, Parse } = await import('xmldsigjs');
+    
+    // Create a wrapper document to work around xmldsigjs ID lookup issues
+    // xmldsigjs has trouble finding elements by ID when they are the root element
+    // By wrapping the Response in another element, we make it a child element
+    // which xmldsigjs can find reliably using getElementById
+    const wrapperXml = `<?xml version="1.0" encoding="UTF-8"?>
+<wrapper xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+${xmlDoc.documentElement.outerHTML}
+</wrapper>`;
+    
+    const parsedDoc = Parse(wrapperXml);
+    
+    // Find the signature in the parsed document
+    const parsedSignatures = parsedDoc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'Signature');
+    let parsedResponseSignature: Element | null = null;
+    
+    for (let i = 0; i < parsedSignatures.length; i++) {
+      const sig = parsedSignatures[i];
+      const parent = sig.parentElement;
+      if (parent && parent.tagName.includes('Response')) {
+        parsedResponseSignature = sig;
+        break;
+      }
+    }
+    
+    if (!parsedResponseSignature) {
+      console.warn('Response signature not found in parsed document');
+      return false;
+    }
+    
+    const signedXml = new SignedXml(parsedDoc);
+    signedXml.LoadXml(parsedResponseSignature);
+    
+    const isValid = await signedXml.Verify();
+    if (isValid) {
+      console.log('Response signature validation passed');
+    } else {
+      console.warn('Response signature validation failed');
+    }
+    return isValid;
   } catch (error) {
     console.error('Error validating response signature:', error);
     return false;
@@ -357,61 +376,83 @@ export function validateResponseSignature(xmlDoc: Document, idpCertificate: stri
 }
 
 /**
- * Validates SAML assertion signature
+ * Validates SAML assertion signature using xmldsigjs (async)
  */
-export function validateAssertionSignature(xmlDoc: Document, idpCertificate: string): boolean {
+export async function validateAssertionSignature(xmlDoc: Document): Promise<boolean> {
   try {
-    // Find the Assertion element
     const assertionElement = xmlDoc.querySelector('saml\\:Assertion, Assertion');
     if (!assertionElement) {
       console.warn('No Assertion element found');
       return false;
     }
-
-    // Check if Assertion is signed - look for signature as direct child of assertion
-    const signatureElement = assertionElement.querySelector(':scope > ds\\:Signature, :scope > Signature');
-    if (!signatureElement) {
+    
+    console.log('Assertion element ID:', assertionElement.getAttribute('ID'));
+    
+    // Find signature by namespace
+    const signatures = xmlDoc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'Signature');
+    
+    if (signatures.length === 0) {
       console.warn('Assertion is not signed');
       return false;
     }
-
-    // Extract signature value
-    const signatureValueElement = signatureElement.querySelector('ds\\:SignatureValue, SignatureValue');
-    if (!signatureValueElement || !signatureValueElement.textContent) {
-      console.warn('No signature value found in assertion');
-      return false;
-    }
-
-    // Extract signed info
-    const signedInfoElement = signatureElement.querySelector('ds\\:SignedInfo, SignedInfo');
-    if (!signedInfoElement) {
-      console.warn('No SignedInfo found in assertion');
-      return false;
-    }
-
-    // Extract certificate
-    const certElement = signatureElement.querySelector('ds\\:X509Certificate, X509Certificate');
-    if (!certElement || !certElement.textContent) {
-      console.warn('No certificate found in assertion signature');
-      return false;
-    }
-
-    // Validate certificate matches IDP certificate
-    const assertionCert = certElement.textContent.trim();
-    const idpCert = idpCertificate
-      .replace(/-----BEGIN CERTIFICATE-----/, '')
-      .replace(/-----END CERTIFICATE-----/, '')
-      .replace(/\s/g, '');
     
-    if (assertionCert !== idpCert) {
-      console.warn('Assertion certificate mismatch');
+    // Find the signature that's a direct child of the assertion
+    let assertionSignature: Element | null = null;
+    for (let i = 0; i < signatures.length; i++) {
+      const sig = signatures[i];
+      if (sig.parentElement === assertionElement) {
+        assertionSignature = sig;
+        console.log(`Found assertion signature at index ${i}`);
+        break;
+      }
+    }
+    
+    if (!assertionSignature) {
+      console.warn('Assertion signature not found');
       return false;
     }
-
-    // For now, we'll do basic validation
-    // In a production environment, you'd want to use a proper XML signature library
-    console.log('Assertion signature validation passed (basic check)');
-    return true;
+    
+    // Debug the signature structure
+    const reference = assertionSignature.querySelector('ds\\:Reference, Reference');
+    if (reference) {
+      console.log('Assertion Reference URI:', reference.getAttribute('URI'));
+    }
+    
+    const { SignedXml, Parse } = await import('xmldsigjs');
+    
+    // Parse the entire document
+    const parsedDoc = Parse(xmlDoc.documentElement.outerHTML);
+    
+    // Find the signature in the parsed document
+    const parsedSignatures = parsedDoc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'Signature');
+    let parsedAssertionSignature: Element | null = null;
+    
+    for (let i = 0; i < parsedSignatures.length; i++) {
+      const sig = parsedSignatures[i];
+      const parent = sig.parentElement;
+      if (parent && parent.tagName.includes('Assertion')) {
+        parsedAssertionSignature = sig;
+        console.log(`Found assertion signature in parsed doc at index ${i}`);
+        break;
+      }
+    }
+    
+    if (!parsedAssertionSignature) {
+      console.warn('Assertion signature not found in parsed document');
+      return false;
+    }
+    
+    const signedXml = new SignedXml(parsedDoc);
+    signedXml.LoadXml(parsedAssertionSignature);
+    
+    console.log('Attempting to verify assertion signature...');
+    const isValid = await signedXml.Verify();
+    if (isValid) {
+      console.log('Assertion signature validation passed');
+    } else {
+      console.warn('Assertion signature validation failed');
+    }
+    return isValid;
   } catch (error) {
     console.error('Error validating assertion signature:', error);
     return false;
@@ -419,16 +460,16 @@ export function validateAssertionSignature(xmlDoc: Document, idpCertificate: str
 }
 
 /**
- * Comprehensive SAML response validation
+ * Comprehensive SAML response validation (async)
  */
-export function validateSAMLResponse(xmlDoc: Document, sp: ServiceProvider): {
+export async function validateSAMLResponse(xmlDoc: Document, sp: ServiceProvider): Promise<{
   isValid: boolean;
   responseSigned: boolean;
   assertionSigned: boolean;
   responseSignatureValid: boolean;
   assertionSignatureValid: boolean;
   errors: string[];
-} {
+}> {
   const result = {
     isValid: true,
     responseSigned: false,
@@ -437,51 +478,40 @@ export function validateSAMLResponse(xmlDoc: Document, sp: ServiceProvider): {
     assertionSignatureValid: false,
     errors: [] as string[]
   };
-
   try {
-    // Check if IDP certificate is configured
     if (!sp.idp.certificate) {
       result.errors.push('IDP certificate not configured');
       result.isValid = false;
       return result;
     }
-
-    // Validate response signature if present
     const responseElement = xmlDoc.querySelector('samlp\\:Response, Response');
     if (responseElement) {
-      // Check for signature as direct child of response (not nested in assertion)
       const responseSignature = responseElement.querySelector(':scope > ds\\:Signature, :scope > Signature');
       if (responseSignature) {
         result.responseSigned = true;
-        result.responseSignatureValid = validateResponseSignature(xmlDoc, sp.idp.certificate);
+        result.responseSignatureValid = await validateResponseSignature(xmlDoc);
         if (!result.responseSignatureValid) {
           result.errors.push('Response signature validation failed');
           result.isValid = false;
         }
       }
     }
-
-    // Validate assertion signature if present
     const assertionElement = xmlDoc.querySelector('saml\\:Assertion, Assertion');
     if (assertionElement) {
-      // Check for signature as direct child of assertion
       const assertionSignature = assertionElement.querySelector(':scope > ds\\:Signature, :scope > Signature');
       if (assertionSignature) {
         result.assertionSigned = true;
-        result.assertionSignatureValid = validateAssertionSignature(xmlDoc, sp.idp.certificate);
+        result.assertionSignatureValid = await validateAssertionSignature(xmlDoc);
         if (!result.assertionSignatureValid) {
           result.errors.push('Assertion signature validation failed');
           result.isValid = false;
         }
       }
     }
-
-    // Check if at least one signature is present and valid
     if (!result.responseSigned && !result.assertionSigned) {
       result.errors.push('Neither response nor assertion is signed');
       result.isValid = false;
     }
-
     return result;
   } catch (error) {
     result.errors.push(`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);

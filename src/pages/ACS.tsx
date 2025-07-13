@@ -117,7 +117,7 @@ const ACS: React.FC = () => {
     }
   };
 
-  const processSAMLResponseData = (encodedResponse: string, sp: ServiceProvider, relayState?: string) => {
+  const processSAMLResponseData = async (encodedResponse: string, sp: ServiceProvider, relayState?: string) => {
     try {
       // Decode the SAML response
       const xmlResponse = decodeSamlResponse(encodedResponse);
@@ -169,7 +169,7 @@ const ACS: React.FC = () => {
       }
 
       // Validate SAML response signatures
-      const validation = validateSAMLResponse(xmlDoc, sp);
+      const validation = await validateSAMLResponse(xmlDoc, sp);
       
       // Format the XML for display
       const formatted = formatXml(xmlResponse);
