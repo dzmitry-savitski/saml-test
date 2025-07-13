@@ -1,4 +1,3 @@
-import forge from 'node-forge';
 import pako from 'pako';
 import type { ServiceProvider } from '../types/samlConfig';
 
@@ -81,41 +80,66 @@ export async function signAuthnRequest(samlRequest: string, privateKeyPem: strin
       throw new Error('AuthnRequest element not found');
     }
     
+    const requestId = authnRequest.getAttribute('ID');
+    if (!requestId) {
+      throw new Error('AuthnRequest must have an ID attribute');
+    }
+    
     const { SignedXml, Parse } = await import('xmldsigjs');
     
     // Parse the document with xmldsigjs
     const parsedDoc = Parse(samlRequest);
     
-    // Convert PEM private key to CryptoKey
+    // Convert PEM private key to CryptoKey - Web Crypto API expects PKCS#8 format
     const privateKey = await convertPemToCryptoKey(privateKeyPem, 'private');
-    
-    // Convert PEM certificate to CryptoKey (for KeyInfo)
-    let publicKey: CryptoKey | undefined;
-    if (certificatePem) {
-      publicKey = await convertPemToCryptoKey(certificatePem, 'public');
-    }
     
     // Create SignedXml instance
     const signedXml = new SignedXml();
     
-    // Sign the document
+    // Sign the document without passing public key to xmldsigjs
+    // Let xmldsigjs handle KeyInfo generation from the private key
     await signedXml.Sign(
       { name: 'RSASSA-PKCS1-v1_5' }, // algorithm
       privateKey, // private key
       parsedDoc, // document to sign
       {
-        keyValue: publicKey, // public key for KeyInfo
         references: [
           {
-            hash: 'SHA-256',
+            hash: 'SHA-1',
             transforms: ['enveloped', 'exc-c14n']
           }
         ]
       }
     );
     
-    // Return the signed XML as string
-    return signedXml.toString();
+    // Get the signed XML
+    let signedXmlString = signedXml.toString();
+    
+    // xmldsigjs doesn't include InclusiveNamespaces in the enveloped-signature transform
+    // We need to manually add it to match the SAML standard
+    if (signedXmlString.includes('<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">')) {
+      signedXmlString = signedXmlString.replace(
+        '<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">',
+        `<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">
+          <InclusiveNamespaces xmlns="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="#default saml ds xs xsi"/>`
+      );
+    }
+    
+    // Fix signature placement - move it to be a direct child of AuthnRequest
+    // The signature should come after Issuer but before NameIDPolicy
+    const signatureMatch = signedXmlString.match(/<ds:Signature[^>]*>[\s\S]*?<\/ds:Signature>/);
+    if (signatureMatch) {
+      const signature = signatureMatch[0];
+      // Remove the signature from its current location
+      signedXmlString = signedXmlString.replace(signature, '');
+      // Insert it after the Issuer element
+      signedXmlString = signedXmlString.replace(
+        /(<saml:Issuer>[^<]*<\/saml:Issuer>)/,
+        `$1\n  ${signature}`
+      );
+    }
+    
+    return signedXmlString;
   } catch (error) {
     console.error('Error signing SAML request:', error);
     // Return unsigned request if signing fails
@@ -124,43 +148,62 @@ export async function signAuthnRequest(samlRequest: string, privateKeyPem: strin
 }
 
 /**
+ * Helper to extract base64 from PEM
+ */
+function pemToBase64(pem: string): string {
+  return pem
+    .replace(/-----BEGIN [^-]+-----/, '')
+    .replace(/-----END [^-]+-----/, '')
+    .replace(/\s+/g, '');
+}
+
+/**
  * Converts PEM format key/certificate to CryptoKey
  */
 async function convertPemToCryptoKey(pem: string, type: 'public' | 'private'): Promise<CryptoKey> {
-  // Remove PEM headers and decode base64
-  const base64 = pem
-    .replace(/-----BEGIN (RSA )?PRIVATE KEY-----/, '')
-    .replace(/-----END (RSA )?PRIVATE KEY-----/, '')
-    .replace(/-----BEGIN CERTIFICATE-----/, '')
-    .replace(/-----END CERTIFICATE-----/, '')
-    .replace(/\s/g, '');
-  
-  const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-  
-  if (type === 'private') {
-    // Import private key
-    return await crypto.subtle.importKey(
-      'pkcs8',
-      binary,
-      {
-        name: 'RSASSA-PKCS1-v1_5',
-        hash: 'SHA-256'
-      },
-      false,
-      ['sign']
-    );
-  } else {
-    // Import public key from certificate
-    return await crypto.subtle.importKey(
-      'spki',
-      binary,
-      {
-        name: 'RSASSA-PKCS1-v1_5',
-        hash: 'SHA-256'
-      },
-      false,
-      ['verify']
-    );
+  try {
+    // Remove PEM headers and decode base64
+    const base64 = pemToBase64(pem);
+    const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    
+    if (type === 'private') {
+      // Import private key - PKCS#8 format
+      // xmldsigjs needs the key to be extractable for KeyInfo generation
+      return await crypto.subtle.importKey(
+        'pkcs8',
+        binary,
+        {
+          name: 'RSASSA-PKCS1-v1_5',
+          hash: 'SHA-1'
+        },
+        true, // extractable = true for xmldsigjs
+        ['sign']
+      );
+    } else {
+      // For certificates, we need to extract the public key from the X.509 certificate
+      // First, parse the certificate to get the public key
+      const { Certificate } = await import('pkijs');
+      const cert = await Certificate.fromBER(binary);
+      
+      // Export the public key from the certificate
+      const publicKeyBuffer = cert.subjectPublicKeyInfo.toSchema().toBER(false);
+      
+      // Import the public key
+      return await crypto.subtle.importKey(
+        'spki',
+        publicKeyBuffer,
+        {
+          name: 'RSASSA-PKCS1-v1_5',
+          hash: 'SHA-1'
+        },
+        false,
+        ['verify']
+      );
+    }
+  } catch (error) {
+    console.error(`Error converting PEM to CryptoKey (${type}):`, error);
+    console.error('PEM content:', pem.substring(0, 100) + '...');
+    throw new Error(`Failed to convert ${type} key: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

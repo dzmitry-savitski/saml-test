@@ -1,4 +1,79 @@
-import forge from 'node-forge';
+import * as asn1js from "asn1js";
+import {
+  Certificate,
+  AttributeTypeAndValue,
+  RelativeDistinguishedNames,
+  Time,
+  Extension,
+  BasicConstraints,
+} from "pkijs";
+
+// Helper: ArrayBuffer to PEM
+function toPEM(buffer: ArrayBuffer, label: string): string {
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  return `-----BEGIN ${label}-----\n${base64.match(/.{1,64}/g)?.join('\n')}\n-----END ${label}-----`;
+}
+
+export async function generateKeyPairAndCertificate(commonName: string): Promise<{
+  privateKeyPem: string;
+  certificatePem: string;
+}> {
+  // 1. Generate key pair
+  const keyPair = await crypto.subtle.generateKey(
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256"
+    },
+    true,
+    ["sign", "verify"]
+  );
+
+  // 2. Create certificate
+  const cert = new Certificate();
+  cert.version = 2;
+  cert.serialNumber = new asn1js.Integer({ value: Math.floor(Math.random() * 1000000) });
+  cert.issuer = new RelativeDistinguishedNames({
+    typesAndValues: [
+      new AttributeTypeAndValue({ type: "2.5.4.3", value: new asn1js.Utf8String({ value: commonName }) })
+    ]
+  });
+  cert.subject = cert.issuer;
+  const now = new Date();
+  cert.notBefore = new Time({ type: 0, value: now });
+  cert.notAfter = new Time({ type: 0, value: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000) });
+  await cert.subjectPublicKeyInfo.importKey(keyPair.publicKey);
+
+  // 3. Extensions (optional, but recommended)
+  // KeyUsage: digitalSignature(0), keyEncipherment(2), keyCertSign(5)
+  // BitString: 1001001 (from right: bit 0 = digitalSignature, 2 = keyEncipherment, 5 = keyCertSign)
+  const keyUsageBits = new Uint8Array([0b00100011]); // digitalSignature + keyEncipherment + keyCertSign
+  cert.extensions = [
+    new Extension({
+      extnID: "2.5.29.19",
+      critical: true,
+      extnValue: new BasicConstraints({ cA: true, pathLenConstraint: 0 }).toSchema().toBER(false)
+    }),
+    new Extension({
+      extnID: "2.5.29.15",
+      critical: true,
+      extnValue: new asn1js.BitString({ valueHex: keyUsageBits.buffer }).toBER(false)
+    })
+  ];
+
+  // 4. Sign certificate
+  await cert.sign(keyPair.privateKey, "SHA-256");
+
+  // 5. Export as PEM
+  const certBuffer = cert.toSchema().toBER(false);
+  const privateKeyBuffer = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+
+  return {
+    privateKeyPem: toPEM(privateKeyBuffer, "PRIVATE KEY"),
+    certificatePem: toPEM(certBuffer, "CERTIFICATE")
+  };
+}
 
 export interface CertificatePair {
   privateKey: string;
@@ -13,75 +88,8 @@ export interface EncryptionCertificatePair {
 /**
  * Generates a new RSA key pair and X.509 certificate for SAML signing
  */
-export function generateSigningCertificate(commonName: string = 'SAML Service Provider'): CertificatePair {
-  // Generate RSA key pair
-  const keys = forge.pki.rsa.generateKeyPair(2048);
-  
-  // Create certificate
-  const cert = forge.pki.createCertificate();
-  
-  // Set public key
-  cert.publicKey = keys.publicKey;
-  
-  // Set certificate details
-  cert.serialNumber = '01';
-  cert.validity.notBefore = new Date();
-  cert.validity.notAfter = new Date();
-  cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1); // Valid for 1 year
-  
-  // Set subject and issuer (self-signed)
-  const attrs = [{
-    name: 'commonName',
-    value: commonName
-  }, {
-    name: 'countryName',
-    value: 'US'
-  }, {
-    shortName: 'ST',
-    value: 'State'
-  }, {
-    name: 'localityName',
-    value: 'City'
-  }, {
-    name: 'organizationName',
-    value: 'Organization'
-  }, {
-    shortName: 'OU',
-    value: 'Organizational Unit'
-  }];
-  
-  cert.setSubject(attrs);
-  cert.setIssuer(attrs);
-  
-  // Set extensions
-  cert.setExtensions([{
-    name: 'basicConstraints',
-    cA: true
-  }, {
-    name: 'keyUsage',
-    keyCertSign: true,
-    digitalSignature: true,
-    nonRepudiation: true,
-    keyEncipherment: true,
-    dataEncipherment: true
-  }, {
-    name: 'extKeyUsage',
-    serverAuth: true,
-    clientAuth: true
-  }, {
-    name: 'subjectAltName',
-    altNames: [{
-      type: 2, // DNS
-      value: 'localhost'
-    }]
-  }]);
-  
-  // Self-sign the certificate
-  cert.sign(keys.privateKey, forge.md.sha256.create());
-  
-  // Convert to PEM format
-  const privateKeyPem = forge.pki.privateKeyToPem(keys.privateKey);
-  const certificatePem = forge.pki.certificateToPem(cert);
+export async function generateSigningCertificate(commonName: string = 'SAML Service Provider'): Promise<CertificatePair> {
+  const { privateKeyPem, certificatePem } = await generateKeyPairAndCertificate(commonName);
   
   return {
     privateKey: privateKeyPem,
@@ -92,75 +100,8 @@ export function generateSigningCertificate(commonName: string = 'SAML Service Pr
 /**
  * Generates a new RSA key pair and X.509 certificate for SAML encryption
  */
-export function generateEncryptionCertificate(commonName: string = 'SAML Service Provider Encryption'): EncryptionCertificatePair {
-  // Generate RSA key pair
-  const keys = forge.pki.rsa.generateKeyPair(2048);
-  
-  // Create certificate
-  const cert = forge.pki.createCertificate();
-  
-  // Set public key
-  cert.publicKey = keys.publicKey;
-  
-  // Set certificate details
-  cert.serialNumber = '02';
-  cert.validity.notBefore = new Date();
-  cert.validity.notAfter = new Date();
-  cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1); // Valid for 1 year
-  
-  // Set subject and issuer (self-signed)
-  const attrs = [{
-    name: 'commonName',
-    value: commonName
-  }, {
-    name: 'countryName',
-    value: 'US'
-  }, {
-    shortName: 'ST',
-    value: 'State'
-  }, {
-    name: 'localityName',
-    value: 'City'
-  }, {
-    name: 'organizationName',
-    value: 'Organization'
-  }, {
-    shortName: 'OU',
-    value: 'Organizational Unit'
-  }];
-  
-  cert.setSubject(attrs);
-  cert.setIssuer(attrs);
-  
-  // Set extensions for encryption
-  cert.setExtensions([{
-    name: 'basicConstraints',
-    cA: true
-  }, {
-    name: 'keyUsage',
-    keyCertSign: true,
-    digitalSignature: true,
-    nonRepudiation: true,
-    keyEncipherment: true,
-    dataEncipherment: true
-  }, {
-    name: 'extKeyUsage',
-    serverAuth: true,
-    clientAuth: true
-  }, {
-    name: 'subjectAltName',
-    altNames: [{
-      type: 2, // DNS
-      value: 'localhost'
-    }]
-  }]);
-  
-  // Self-sign the certificate
-  cert.sign(keys.privateKey, forge.md.sha256.create());
-  
-  // Convert to PEM format
-  const privateKeyPem = forge.pki.privateKeyToPem(keys.privateKey);
-  const certificatePem = forge.pki.certificateToPem(cert);
+export async function generateEncryptionCertificate(commonName: string = 'SAML Service Provider Encryption'): Promise<EncryptionCertificatePair> {
+  const { privateKeyPem, certificatePem } = await generateKeyPairAndCertificate(commonName);
   
   return {
     privateKey: privateKeyPem,
@@ -171,15 +112,17 @@ export function generateEncryptionCertificate(commonName: string = 'SAML Service
 /**
  * Generates both signing and encryption certificates for a new SP
  */
-export function generateSPCertificates(spId: string): {
+export async function generateSPCertificates(spId: string): Promise<{
   signing: CertificatePair;
   encryption: EncryptionCertificatePair;
-} {
-  const signing = generateSigningCertificate(`SAML SP ${spId} - Signing`);
-  const encryption = generateEncryptionCertificate(`SAML SP ${spId} - Encryption`);
+}> {
+  const signing = await generateSigningCertificate(`SAML SP ${spId} - Signing`);
+  const encryption = await generateEncryptionCertificate(`SAML SP ${spId} - Encryption`);
   
   return {
     signing,
     encryption
   };
-} 
+}
+
+ 

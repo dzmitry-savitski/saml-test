@@ -215,11 +215,11 @@ const SPConfig: React.FC = () => {
     setRegenerateDialogOpen(true);
   };
 
-  const handleRegenerateConfirm = () => {
+  const handleRegenerateConfirm = async () => {
     if (!formData || !spId) return;
     
     try {
-      const certificates = generateSPCertificates(spId);
+      const certificates = await generateSPCertificates(spId);
       
       handleInputChange('privateKey', certificates.signing.privateKey);
       handleInputChange('certificate', certificates.signing.certificate);

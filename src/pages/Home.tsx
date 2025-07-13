@@ -9,10 +9,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../com
 import { Edit, Trash2 } from 'lucide-react';
 import { SectionCard } from '../components/ui/SectionCard';
 
-const emptySP = (name: string): ServiceProvider => {
+const emptySP = async (name: string): Promise<ServiceProvider> => {
   const id = crypto.randomUUID();
   // Generate certificates for the new SP
-  const certificates = generateSPCertificates(id);
+  const certificates = await generateSPCertificates(id);
   
   return {
     id,
@@ -53,7 +53,7 @@ const Home: React.FC = () => {
   const [spToDelete, setSpToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newName.trim() || !/\S/.test(newName)) {
       setError('Name is required and must contain at least one non-whitespace character.');
       return;
@@ -62,7 +62,8 @@ const Home: React.FC = () => {
       setError('Name already exists. Please choose a unique name.');
       return;
     }
-    addSP(emptySP(newName));
+    const sp = await emptySP(newName);
+    addSP(sp);
     setNewName('');
     setError('');
   };
