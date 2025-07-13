@@ -50,12 +50,12 @@ const Initiate: React.FC = () => {
     navigate('/');
   };
 
-  const handlePreviewRequest = () => {
+  const handlePreviewRequest = async () => {
     if (!sp) return;
     try {
       let samlRequest = createAuthnRequest(sp, forceAuthn, allowCreate);
       if (sp.signAuthnRequest && sp.privateKey) {
-        samlRequest = signAuthnRequest(samlRequest, sp.privateKey);
+        samlRequest = await signAuthnRequest(samlRequest, sp.privateKey);
       }
       let encodedRequest: string;
       if (sp.idp.singleSignOnBinding === 'HTTP-Redirect') {

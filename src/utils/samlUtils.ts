@@ -67,13 +67,10 @@ export function createAuthnRequest(sp: ServiceProvider, forceAuthn: boolean = fa
 }
 
 /**
- * Signs a SAML request with the SP's private key
+ * Signs a SAML request with the SP's private key using xmldsigjs
  */
-export function signAuthnRequest(samlRequest: string, privateKeyPem: string, certificatePem?: string): string {
+export async function signAuthnRequest(samlRequest: string, privateKeyPem: string, certificatePem?: string): Promise<string> {
   try {
-    // Parse the private key
-    const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
-    
     // Parse the XML using DOM
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(samlRequest, 'text/xml');
@@ -84,102 +81,86 @@ export function signAuthnRequest(samlRequest: string, privateKeyPem: string, cer
       throw new Error('AuthnRequest element not found');
     }
     
-    // Create signature element first (without signature value)
-    const signatureElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Signature');
+    const { SignedXml, Parse } = await import('xmldsigjs');
     
-    // Create SignedInfo
-    const signedInfo = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:SignedInfo');
+    // Parse the document with xmldsigjs
+    const parsedDoc = Parse(samlRequest);
     
-    const canonicalizationMethod = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:CanonicalizationMethod');
-    canonicalizationMethod.setAttribute('Algorithm', 'http://www.w3.org/2001/10/xml-exc-c14n#');
+    // Convert PEM private key to CryptoKey
+    const privateKey = await convertPemToCryptoKey(privateKeyPem, 'private');
     
-    const signatureMethod = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:SignatureMethod');
-    signatureMethod.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#rsa-sha1');
-    
-    const reference = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Reference');
-    reference.setAttribute('URI', `#${authnRequest.getAttribute('ID')}`);
-    
-    const transforms = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Transforms');
-    
-    const transform1 = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Transform');
-    transform1.setAttribute('Algorithm', 'http://www.w3.org/2001/10/xml-exc-c14n#');
-    
-    const transform2 = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:Transform');
-    transform2.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#enveloped-signature');
-    
-    // Add InclusiveNamespaces as shown in the SAML spec
-    const inclusiveNamespaces = xmlDoc.createElementNS('http://www.w3.org/2001/10/xml-exc-c14n#', 'InclusiveNamespaces');
-    inclusiveNamespaces.setAttribute('PrefixList', '#default saml ds xs xsi');
-    transform2.appendChild(inclusiveNamespaces);
-    
-    const digestMethod = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:DigestMethod');
-    digestMethod.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#sha1');
-    
-    // Build the signature structure
-    transforms.appendChild(transform1);
-    transforms.appendChild(transform2);
-    reference.appendChild(transforms);
-    reference.appendChild(digestMethod);
-    signedInfo.appendChild(canonicalizationMethod);
-    signedInfo.appendChild(signatureMethod);
-    signedInfo.appendChild(reference);
-    signatureElement.appendChild(signedInfo);
-    
-    // Insert signature into the document first
-    const issuer = authnRequest.querySelector('saml\\:Issuer, Issuer');
-    if (issuer) {
-      issuer.parentNode?.insertBefore(signatureElement, issuer.nextSibling);
-    } else {
-      authnRequest.insertBefore(signatureElement, authnRequest.firstChild);
-    }
-    
-    // Now calculate digest of the document with signature element
-    const documentWithSignature = new XMLSerializer().serializeToString(xmlDoc);
-    const digest = forge.md.sha1.create();
-    digest.update(documentWithSignature, 'utf8');
-    const digestValue = forge.util.encode64(digest.digest().getBytes());
-    
-    // Add digest value
-    const digestValueElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:DigestValue');
-    digestValueElement.textContent = digestValue;
-    reference.appendChild(digestValueElement);
-    
-    // Create canonicalized SignedInfo for signing
-    const canonicalizedSignedInfo = new XMLSerializer().serializeToString(signedInfo);
-    const md = forge.md.sha1.create();
-    md.update(canonicalizedSignedInfo, 'utf8');
-    const signature = privateKey.sign(md);
-    const signatureValue = forge.util.encode64(signature);
-    
-    // Add signature value
-    const signatureValueElement = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:SignatureValue');
-    signatureValueElement.textContent = signatureValue;
-    signatureElement.appendChild(signatureValueElement);
-    
-    // Add KeyInfo with certificate if provided
+    // Convert PEM certificate to CryptoKey (for KeyInfo)
+    let publicKey: CryptoKey | undefined;
     if (certificatePem) {
-      const keyInfo = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:KeyInfo');
-      const x509Data = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:X509Data');
-      const x509Certificate = xmlDoc.createElementNS('http://www.w3.org/2000/09/xmldsig#', 'ds:X509Certificate');
-      
-      // Clean the certificate (remove headers and whitespace)
-      const cleanCert = certificatePem
-        .replace(/-----BEGIN CERTIFICATE-----/, '')
-        .replace(/-----END CERTIFICATE-----/, '')
-        .replace(/\s/g, '');
-      
-      x509Certificate.textContent = cleanCert;
-      x509Data.appendChild(x509Certificate);
-      keyInfo.appendChild(x509Data);
-      signatureElement.appendChild(keyInfo);
+      publicKey = await convertPemToCryptoKey(certificatePem, 'public');
     }
     
-    // Serialize back to string
-    return new XMLSerializer().serializeToString(xmlDoc);
+    // Create SignedXml instance
+    const signedXml = new SignedXml();
+    
+    // Sign the document
+    await signedXml.Sign(
+      { name: 'RSASSA-PKCS1-v1_5' }, // algorithm
+      privateKey, // private key
+      parsedDoc, // document to sign
+      {
+        keyValue: publicKey, // public key for KeyInfo
+        references: [
+          {
+            hash: 'SHA-256',
+            transforms: ['enveloped', 'exc-c14n']
+          }
+        ]
+      }
+    );
+    
+    // Return the signed XML as string
+    return signedXml.toString();
   } catch (error) {
     console.error('Error signing SAML request:', error);
     // Return unsigned request if signing fails
     return samlRequest;
+  }
+}
+
+/**
+ * Converts PEM format key/certificate to CryptoKey
+ */
+async function convertPemToCryptoKey(pem: string, type: 'public' | 'private'): Promise<CryptoKey> {
+  // Remove PEM headers and decode base64
+  const base64 = pem
+    .replace(/-----BEGIN (RSA )?PRIVATE KEY-----/, '')
+    .replace(/-----END (RSA )?PRIVATE KEY-----/, '')
+    .replace(/-----BEGIN CERTIFICATE-----/, '')
+    .replace(/-----END CERTIFICATE-----/, '')
+    .replace(/\s/g, '');
+  
+  const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  
+  if (type === 'private') {
+    // Import private key
+    return await crypto.subtle.importKey(
+      'pkcs8',
+      binary,
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: 'SHA-256'
+      },
+      false,
+      ['sign']
+    );
+  } else {
+    // Import public key from certificate
+    return await crypto.subtle.importKey(
+      'spki',
+      binary,
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: 'SHA-256'
+      },
+      false,
+      ['verify']
+    );
   }
 }
 
@@ -233,14 +214,14 @@ export function base64EncodeSamlRequest(samlRequest: string): string {
 /**
  * Initiates SAML authentication by redirecting to IDP
  */
-export function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = false, allowCreate: boolean = true, relayState?: string): void {
+export async function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean = false, allowCreate: boolean = true, relayState?: string): Promise<void> {
   try {
     // Generate the SAML request
     let samlRequest = createAuthnRequest(sp, forceAuthn, allowCreate);
     
     // Sign the request if required
     if (sp.signAuthnRequest && sp.privateKey) {
-      samlRequest = signAuthnRequest(samlRequest, sp.privateKey, sp.certificate);
+      samlRequest = await signAuthnRequest(samlRequest, sp.privateKey, sp.certificate);
     }
     
     // Extract request ID for storage
