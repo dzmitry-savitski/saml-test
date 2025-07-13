@@ -75,8 +75,7 @@ export function createAuthnRequest(sp: ServiceProvider, forceAuthn: boolean = fa
                     ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:${sp.spAcsBinding}"
                     AssertionConsumerServiceURL="${sp.acsUrl}"
                     Destination="${sp.idp.ssoUrl}"
-                    ${forceAuthn ? 'ForceAuthn="true"' : ''}
-                    ${allowCreate ? 'IsPassive="false"' : ''}>
+                    ${forceAuthn ? 'ForceAuthn="true"' : ''}>
   <saml:Issuer>${sp.entityId}</saml:Issuer>
   <samlp:NameIDPolicy
     Format="${sp.nameIdFormat}"
@@ -89,7 +88,7 @@ export function createAuthnRequest(sp: ServiceProvider, forceAuthn: boolean = fa
 /**
  * Signs a SAML request with the SP's private key using xmldsigjs
  */
-export async function signAuthnRequest(samlRequest: string, privateKeyPem: string): Promise<string> {
+export async function signAuthnRequest(samlRequest: string, privateKeyPem: string, certificatePem?: string): Promise<string> {
   try {
     // Parse the XML using DOM
     const parser = new DOMParser();
@@ -120,21 +119,27 @@ export async function signAuthnRequest(samlRequest: string, privateKeyPem: strin
     signedXml.XmlSignature.SignedInfo.CanonicalizationMethod.Algorithm = 'http://www.w3.org/2001/10/xml-exc-c14n#';
     // Try to set prefix to empty string to use default namespace (like xml-crypto)
     (signedXml as any).prefix = '';
+
+    // Prepare x509 option if certificate is provided
+    let signOptions: any = {
+      references: [
+        {
+          hash: 'SHA-1',
+          transforms: ['enveloped', 'exc-c14n'], // Use 'exc-c14n' for exclusive canonicalization
+          uri: `#${requestId}` // Set the URI to reference the element by ID
+        }
+      ]
+    };
+    if (certificatePem) {
+      signOptions.x509 = [pemToBase64(certificatePem)];
+    }
     
     // Sign the document
     await signedXml.Sign(
       { name: 'RSASSA-PKCS1-v1_5' }, // algorithm
       privateKey, // private key
       parsedDoc, // document to sign
-      {
-        references: [
-          {
-            hash: 'SHA-1',
-            transforms: ['enveloped', 'exc-c14n'], // Use 'exc-c14n' for exclusive canonicalization
-            uri: `#${requestId}` // Set the URI to reference the element by ID
-          }
-        ]
-      }
+      signOptions
     );
     
     // Get the signed XML
@@ -145,8 +150,7 @@ export async function signAuthnRequest(samlRequest: string, privateKeyPem: strin
     if (signedXmlString.includes('<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">')) {
       signedXmlString = signedXmlString.replace(
         '<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">',
-        `<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">
-          <InclusiveNamespaces xmlns="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="#default saml ds xs xsi"/>`
+        `<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">\n          <InclusiveNamespaces xmlns="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="#default saml ds xs xsi"/>`
       );
     }
     
@@ -289,7 +293,7 @@ export async function initiateSamlAuth(sp: ServiceProvider, forceAuthn: boolean 
     
     // Sign the request if required
     if (sp.signAuthnRequest && sp.privateKey) {
-      samlRequest = await signAuthnRequest(samlRequest, sp.privateKey);
+      samlRequest = await signAuthnRequest(samlRequest, sp.privateKey, sp.certificate);
     }
     
     // Extract request ID for storage

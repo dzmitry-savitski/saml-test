@@ -57,7 +57,7 @@ describe('SAML Signature Integration', () => {
     expect(unsignedRequest).toBeTruthy();
 
     // 4. Sign using our method
-    const ourSigned = await signAuthnRequest(unsignedRequest, privateKey);
+    const ourSigned = await signAuthnRequest(unsignedRequest, privateKey, certificate);
     const ourSigValue = getSignatureValue(ourSigned);
     console.log('Our signed XML:', ourSigned);
     expect(ourSigValue).toBeTruthy();
