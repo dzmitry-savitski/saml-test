@@ -26,6 +26,58 @@ const SPConfig: React.FC = () => {
   const [isImportingMetadata, setIsImportingMetadata] = useState(false);
   const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
   const hasLoadedData = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handler for file upload of IDP metadata
+  const handleIdpMetadataFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      // Parse and extract metadata as in importIdpMetadata
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(text, 'text/xml');
+
+      // Extract EntityDescriptor attributes
+      const entityDescriptor = xmlDoc.querySelector('EntityDescriptor');
+      if (entityDescriptor) {
+        const entityId = entityDescriptor.getAttribute('entityID');
+        if (entityId) {
+          handleInputChange('idp.entityId', entityId);
+        }
+      }
+
+      // Extract SSO URL
+      const ssoDescriptor = xmlDoc.querySelector('SingleSignOnService');
+      if (ssoDescriptor) {
+        const location = ssoDescriptor.getAttribute('Location');
+        const binding = ssoDescriptor.getAttribute('Binding');
+        if (location) {
+          handleInputChange('idp.ssoUrl', location);
+        }
+        if (binding) {
+          const isPost = binding.includes('HTTP-POST');
+          handleInputChange('idp.singleSignOnBinding', isPost ? 'HTTP-POST' : 'HTTP-Redirect');
+        }
+      }
+
+      // Extract certificate
+      const certElement = xmlDoc.querySelector('X509Certificate');
+      if (certElement && certElement.textContent) {
+        const cert = `-----BEGIN CERTIFICATE-----\n${certElement.textContent}\n-----END CERTIFICATE-----`;
+        handleInputChange('idp.certificate', cert);
+      }
+
+      // Store raw metadata
+      handleInputChange('idp.rawMetadataXml', text);
+
+      toast.success('IDP metadata imported from file!');
+    } catch (error) {
+      console.error('Error importing metadata from file:', error);
+      toast.error('Error importing metadata from file. Please check the file and try again.');
+    }
+  };
 
   // Load SP data on mount
   useEffect(() => {
@@ -549,6 +601,21 @@ const SPConfig: React.FC = () => {
               >
                 {isImportingMetadata ? 'Importing...' : 'Import'}
               </Button>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Upload Metadata
+              </Button>
+              <input
+                type="file"
+                accept=".xml"
+                ref={fileInputRef}
+                onChange={handleIdpMetadataFileUpload}
+                style={{ display: 'none' }}
+                aria-label="Upload IDP Metadata XML"
+              />
             </div>
           </div>
 

@@ -69,7 +69,9 @@ const Metadata: React.FC = () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" 
                      entityID="${serviceProvider.entityId || ''}">
-  <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+  <md:SPSSODescriptor 
+    protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol"
+    AuthnRequestsSigned="${serviceProvider.signAuthnRequest ? 'true' : 'false'}">
     ${serviceProvider.sloUrl ? `<md:SingleLogoutService 
       Binding="urn:oasis:names:tc:SAML:2.0:bindings:${serviceProvider.spSloBinding || 'HTTP-POST'}"
       Location="${serviceProvider.sloUrl}" />` : ''}
