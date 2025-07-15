@@ -170,22 +170,17 @@ const About: React.FC = () => {
             Run with Docker
           </h2>
           <p className="text-gray-700">
-            Prefer to run this application in a container? Docker support is coming soon!
+            Prefer to run this application in a container? You can use the prebuilt Docker image for a quick start:
           </p>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-yellow-800 text-sm">
-              <strong>Note:</strong> Docker support is currently in development. 
-              Check back soon for Docker instructions and container images.
-            </p>
-          </div>
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold mb-2">Planned Docker Features</h3>
-            <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-              <li>Pre-built Docker images</li>
-              <li>Docker Compose setup for easy deployment</li>
-              <li>Environment variable configuration</li>
-              <li>Production-ready containerization</li>
-            </ul>
+            <h3 className="font-semibold mb-2">Quick Start</h3>
+            <code className="bg-gray-100 px-2 py-1 rounded text-xs block mb-2">docker run -p 80:80 dsavitski/saml-test</code>
+            <p className="text-sm text-gray-700 mt-2">This will start the app on port 80. Open <code className='bg-gray-100 px-1 rounded'>http://localhost</code> in your browser.</p>
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-800 text-sm">
+              <strong>Recommended:</strong> Using the Docker image is the fastest way to try SAML Test without installing Node.js or dependencies.
+            </p>
           </div>
         </div>
       </SectionCard>

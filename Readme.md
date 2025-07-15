@@ -56,12 +56,12 @@ The application will be available at [http://localhost:8788](http://localhost:87
 
 ## Run with Docker
 
-Prefer to run this application in a container? Docker support is coming soon!
+Prefer to run this application in a container? You can use the prebuilt Docker image for a quick start:
 
-> **Note:** Docker support is currently in development. Check back soon for Docker instructions and container images.
+### Quick Start
+```sh
+docker run -p 80:80 dsavitski/saml-test
+```
+This will start the app on port 80. Open [http://localhost](http://localhost) in your browser.
 
-### Planned Docker Features
-- Pre-built Docker images
-- Docker Compose setup for easy deployment
-- Environment variable configuration
-- Production-ready containerization
+> **Recommended:** Using the Docker image is the fastest way to try SAML Test without installing Node.js or dependencies.
