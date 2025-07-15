@@ -1,26 +1,5 @@
 import pako from 'pako';
 import type { ServiceProvider } from '../types/samlConfig';
-import { Application } from 'xmldsigjs';
-
-// Set up webcrypto and engine for xmldsigjs
-let webcrypto: Crypto;
-let engine: 'NodeJS' | 'WebCrypto';
-
-if (
-  typeof process !== 'undefined' &&
-  process.versions &&
-  process.versions.node
-) {
-  // Node.js or Vitest
-  webcrypto = require('crypto').webcrypto;
-  engine = 'NodeJS';
-} else {
-  // Browser
-  webcrypto = window.crypto;
-  engine = 'WebCrypto';
-}
-
-Application.setEngine(engine, webcrypto);
 
 // Session storage key prefix for storing request IDs
 const REQUEST_ID_PREFIX = 'saml_request_';
@@ -116,15 +95,15 @@ export async function signAuthnRequest(samlRequest: string, privateKeyPem: strin
     // Create SignedXml instance
     const signedXml = new SignedXml();
     // Set exclusive canonicalization using the correct property chain
-    signedXml.XmlSignature.SignedInfo.CanonicalizationMethod.Algorithm = 'http://www.w3.org/2001/10/xml-exc-c14n#';
-    // Try to set prefix to empty string to use default namespace (like xml-crypto)
-    (signedXml as any).prefix = '';
+    // signedXml.XmlSignature.SignedInfo.CanonicalizationMethod.Algorithm = 'http://www.w3.org/2001/10/xml-exc-c14n#';
+    // // Try to set prefix to empty string to use default namespace (like xml-crypto)
+    // (signedXml as any).prefix = '';
 
     // Prepare x509 option if certificate is provided
     let signOptions: any = {
       references: [
         {
-          hash: 'SHA-1',
+          hash: 'SHA-256',
           transforms: ['enveloped', 'exc-c14n'], // Use 'exc-c14n' for exclusive canonicalization
           uri: `#${requestId}` // Set the URI to reference the element by ID
         }
@@ -142,32 +121,13 @@ export async function signAuthnRequest(samlRequest: string, privateKeyPem: strin
       signOptions
     );
     
-    // Get the signed XML
-    let signedXmlString = signedXml.toString();
-    
-    // xmldsigjs doesn't include InclusiveNamespaces in the enveloped-signature transform
-    // We need to manually add it to match the SAML standard
-    if (signedXmlString.includes('<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">')) {
-      signedXmlString = signedXmlString.replace(
-        '<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">',
-        `<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">\n          <InclusiveNamespaces xmlns="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="#default saml ds xs xsi"/>`
-      );
+    const issuer = parsedDoc.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer")[0];
+    const signature = signedXml.GetXml()?.getRootNode();
+    if (issuer && signature && issuer.parentNode) {
+      issuer.parentNode.insertBefore(signature, issuer.nextSibling);
     }
-    
-    // Fix signature placement - move it to be a direct child of AuthnRequest
-    // The signature should come after Issuer but before NameIDPolicy
-    const signatureMatch = signedXmlString.match(/<ds:Signature[^>]*>[\s\S]*?<\/ds:Signature>/);
-    if (signatureMatch) {
-      const signature = signatureMatch[0];
-      // Remove the signature from its current location
-      signedXmlString = signedXmlString.replace(signature, '');
-      // Insert it after the Issuer element
-      signedXmlString = signedXmlString.replace(
-        /(<saml:Issuer>[^<]*<\/saml:Issuer>)/,
-        `$1\n  ${signature}`
-      );
-    }
-    
+    const signedXmlString = new XMLSerializer().serializeToString(parsedDoc);
+
     return signedXmlString;
   } catch (error) {
     console.error('Error signing SAML request:', error);
@@ -198,12 +158,12 @@ async function convertPemToCryptoKey(pem: string, type: 'public' | 'private'): P
     if (type === 'private') {
       // Import private key - PKCS#8 format
       // xmldsigjs needs the key to be extractable for KeyInfo generation
-      return await webcrypto.subtle.importKey(
+      return await window.crypto.subtle.importKey(
         'pkcs8',
         binary,
         {
           name: 'RSASSA-PKCS1-v1_5',
-          hash: 'SHA-1'
+          hash: 'SHA-256'
         },
         true, // extractable = true for xmldsigjs
         ['sign']
@@ -218,12 +178,12 @@ async function convertPemToCryptoKey(pem: string, type: 'public' | 'private'): P
       const publicKeyBuffer = cert.subjectPublicKeyInfo.toSchema().toBER(false);
       
       // Import the public key
-      return await webcrypto.subtle.importKey(
+      return await window.crypto.subtle.importKey(
         'spki',
         publicKeyBuffer,
         {
           name: 'RSASSA-PKCS1-v1_5',
-          hash: 'SHA-1'
+          hash: 'SHA-256'
         },
         false,
         ['verify']
