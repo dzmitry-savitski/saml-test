@@ -5,23 +5,25 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --only=production
+RUN npm install
 
 COPY . .
 
 RUN npm run build
 
 # App
-FROM node:22-alpine
+FROM node:lts-slim
 
 WORKDIR /app
 
-COPY --from=builder /app/dist ./
-COPY --from=builder /app/functions ./
-COPY --from=builder /app/public ./
+RUN npm install -g wrangler
+
+COPY --from=builder /app/dist ./dist
+COPY ./functions ./functions
+COPY ./wrangler.jsonc .
 
 ENV WRANGLER_SEND_METRICS=false
 
 EXPOSE 80
 
-CMD ["npx", "wrangler", "pages", "dev", "--port", "80"]
+CMD ["wrangler", "pages", "dev", "--port", "80", "--ip", "0.0.0.0"]
