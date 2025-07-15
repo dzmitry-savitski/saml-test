@@ -1,5 +1,7 @@
 # SAML Test
 
+> Running app: [https://saml-test.dev/](https://saml-test.dev/)
+
 ## Project Purpose
 
 SAML Test is a quick and easy tool designed to test SAML authentication flows. It acts as a SAML Service Provider (SP) that you can configure to test your Identity Provider (IdP) integration. This tool is particularly useful for authentication engineers and developers who need to verify SAML configurations, test authentication flows, or debug SAML-related issues during development.
