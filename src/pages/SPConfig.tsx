@@ -62,6 +62,15 @@ const SPConfig: React.FC = () => {
         }
       }
 
+      // Extract WantAuthnRequestsSigned
+      const ssoDescriptorParent = xmlDoc.querySelector('IDPSSODescriptor');
+      if (ssoDescriptorParent) {
+        const wantSigned = ssoDescriptorParent.getAttribute('WantAuthnRequestsSigned');
+        if (wantSigned === 'true' || wantSigned === 'false') {
+          handleInputChange('idp.wantAuthnRequestsSigned', wantSigned === 'true');
+        }
+      }
+
       // Extract certificate
       const certElement = xmlDoc.querySelector('X509Certificate');
       if (certElement && certElement.textContent) {
@@ -238,6 +247,15 @@ const SPConfig: React.FC = () => {
         if (binding) {
           const isPost = binding.includes('HTTP-POST');
           handleInputChange('idp.singleSignOnBinding', isPost ? 'HTTP-POST' : 'HTTP-Redirect');
+        }
+      }
+
+      // Extract WantAuthnRequestsSigned
+      const ssoDescriptorParent = xmlDoc.querySelector('IDPSSODescriptor');
+      if (ssoDescriptorParent) {
+        const wantSigned = ssoDescriptorParent.getAttribute('WantAuthnRequestsSigned');
+        if (wantSigned === 'true' || wantSigned === 'false') {
+          handleInputChange('idp.wantAuthnRequestsSigned', wantSigned === 'true');
         }
       }
 
