@@ -94,10 +94,9 @@ export async function signAuthnRequest(samlRequest: string, privateKeyPem: strin
     
     // Create SignedXml instance
     const signedXml = new SignedXml();
+
     // Set exclusive canonicalization using the correct property chain
-    // signedXml.XmlSignature.SignedInfo.CanonicalizationMethod.Algorithm = 'http://www.w3.org/2001/10/xml-exc-c14n#';
-    // // Try to set prefix to empty string to use default namespace (like xml-crypto)
-    // (signedXml as any).prefix = '';
+    signedXml.XmlSignature.SignedInfo.CanonicalizationMethod.Algorithm = 'http://www.w3.org/2001/10/xml-exc-c14n#';
 
     // Prepare x509 option if certificate is provided
     let signOptions: any = {
