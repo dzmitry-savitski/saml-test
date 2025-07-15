@@ -1,9 +1,13 @@
 import React from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import xml from 'react-syntax-highlighter/dist/esm/languages/hljs/xml';
+import oneLight from 'react-syntax-highlighter/dist/esm/styles/hljs/atom-one-light';
 import { Button } from './button';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Register only the XML language
+SyntaxHighlighter.registerLanguage('xml', xml);
 
 interface CodeBlockProps {
   code: string;
