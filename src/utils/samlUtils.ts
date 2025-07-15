@@ -1,5 +1,6 @@
 import pako from 'pako';
 import type { ServiceProvider } from '../types/samlConfig';
+import { Certificate } from 'pkijs';
 
 // Session storage key prefix for storing request IDs
 const REQUEST_ID_PREFIX = 'saml_request_';
@@ -170,7 +171,6 @@ async function convertPemToCryptoKey(pem: string, type: 'public' | 'private'): P
     } else {
       // For certificates, we need to extract the public key from the X.509 certificate
       // First, parse the certificate to get the public key
-      const { Certificate } = await import('pkijs');
       const cert = await Certificate.fromBER(binary);
       
       // Export the public key from the certificate
