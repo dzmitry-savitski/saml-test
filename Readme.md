@@ -1,6 +1,6 @@
 # SAML Test
 
-> Running app: [https://saml-test.dev/](https://saml-test.dev/)
+## **Running app:** [https://saml-test.dev/](https://saml-test.dev/)
 
 ## Project Purpose
 
