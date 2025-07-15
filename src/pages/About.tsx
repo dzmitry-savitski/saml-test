@@ -80,7 +80,7 @@ const About: React.FC = () => {
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
-            onClick={() => window.open('https://github.com/your-username/saml-test', '_blank')}
+            onClick={() => window.open('https://github.com/dzmitry-savitski/saml-test', '_blank')}
           >
             <ExternalLink className="h-4 w-4" />
             View on GitHub
@@ -93,10 +93,10 @@ const About: React.FC = () => {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <Bug className="h-5 w-5" />
-            Report a Bug
+            Issue/Suggestion
           </h2>
           <p className="text-gray-700">
-            Found a bug or have a feature request? We'd love to hear from you! Please 
+            Found a bug or have a feature request? I'd love to hear from you! Please 
             report issues through our GitHub repository.
           </p>
           <div className="space-y-2">
@@ -114,7 +114,7 @@ const About: React.FC = () => {
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
-            onClick={() => window.open('https://github.com/your-username/saml-test/issues', '_blank')}
+            onClick={() => window.open('https://github.com/dzmitry-savitski/saml-test/issues', '_blank')}
           >
             <ExternalLink className="h-4 w-4" />
             Report Issue
@@ -143,7 +143,7 @@ const About: React.FC = () => {
             <h3 className="font-semibold mb-2">Installation Steps</h3>
             <div className="space-y-2 text-sm">
               <div>
-                <code className="bg-gray-100 px-2 py-1 rounded text-xs">git clone https://github.com/your-username/saml-test.git</code>
+                <code className="bg-gray-100 px-2 py-1 rounded text-xs">git clone https://github.com/dzmitry-savitski/saml-test.git</code>
               </div>
               <div>
                 <code className="bg-gray-100 px-2 py-1 rounded text-xs">cd saml-test</code>
